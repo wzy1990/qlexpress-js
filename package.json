@@ -1,0 +1,32 @@
+{
+  "name": "qlexpress-js",
+  "version": "1.0.0",
+  "description": "A powerful JavaScript expression engine inspired by Alibaba QLExpress",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "node test/index.js",
+    "test:coverage": "node test/coverage.js"
+  },
+  "keywords": [
+    "expression",
+    "engine",
+    "rule-engine",
+    "script",
+    "qlexpress"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "rollup": "^3.29.4",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

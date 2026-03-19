@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QLExpress-JS 项目下载</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .download-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 18px 50px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin: 10px;
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .download-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+    }
+    .demo-btn {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4);
+    }
+    .demo-btn:hover {
+      box-shadow: 0 10px 30px rgba(17, 153, 142, 0.5);
+    }
+    .file-info {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: left;
+    }
+    .file-info h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+    .file-info ul {
+      list-style: none;
+      padding: 0;
+    }
+    .file-info li {
+      color: #555;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+    }
+    .file-info li:last-child {
+      border-bottom: none;
+    }
+    .file-info li span {
+      color: #667eea;
+      font-weight: 600;
+    }
+    .features {
+      text-align: left;
+      margin-top: 25px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      border-radius: 12px;
+    }
+    .features h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .features ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .features li {
+      color: #555;
+      font-size: 0.9rem;
+      padding: 5px 0;
+    }
+    .features li::before {
+      content: "✅ ";
+    }
+    @media (max-width: 500px) {
+      .features ul {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 QLExpress-JS</h1>
+    <p class="subtitle">基于阿里巴巴QLExpress设计的JavaScript表达式引擎<br>适用于前端开发的流程编排、规则引擎等场景</p>
+    
+    <div>
+      <a href="qlexpress-js.zip" download class="download-btn">
+        📦 下载项目源码
+      </a>
+      <a href="index.html" class="download-btn demo-btn">
+        🎮 在线演示
+      </a>
+    </div>
+    
+    <div class="file-info">
+      <h3>📁 文件信息</h3>
+      <ul>
+        <li><span>文件名:</span> qlexpress-js.zip</li>
+        <li><span>大小:</span> 118 KB</li>
+        <li><span>格式:</span> ZIP压缩包</li>
+        <li><span>包含:</span> 完整源码 + 编译文件 + 演示页面</li>
+      </ul>
+    </div>
+    
+    <div class="features">
+      <h3>✨ 核心功能</h3>
+      <ul>
+        <li>词法分析和语法分析</li>
+        <li>if/for/while控制流</li>
+        <li>函数定义与递归</li>
+        <li>SQL风格表达式</li>
+        <li>丰富内置函数库</li>
+        <li>自定义函数和宏</li>
+        <li>沙箱安全模式</li>
+        <li>中文变量名支持</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
