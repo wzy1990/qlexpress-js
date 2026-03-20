@@ -11,6 +11,7 @@ import {
   MemberExpression,
   CallExpression,
   NewExpression,
+  ArrowFunctionExpression,
   InExpression,
   LikeExpression,
   BetweenExpression,
@@ -219,6 +220,9 @@ export class Interpreter {
 
       case NodeType.NewExpression:
         return this.evaluateNewExpression(node as NewExpression);
+
+      case NodeType.ArrowFunctionExpression:
+        return this.evaluateArrowFunctionExpression(node as ArrowFunctionExpression);
 
       case NodeType.InExpression:
         return this.evaluateInExpression(node as InExpression);
@@ -697,6 +701,11 @@ export class Interpreter {
       }
     }
 
+    // 箭头函数
+    if (callee && typeof callee === 'function' && (callee as any).__isArrowFunction) {
+      return callee(...args);
+    }
+
     if (typeof callee === 'function') {
       return callee(...args);
     }
@@ -751,6 +760,62 @@ export class Interpreter {
     }
 
     return new constructor(...args);
+  }
+
+  /**
+   * 评估箭头函数表达式
+   */
+  private evaluateArrowFunctionExpression(node: ArrowFunctionExpression): any {
+    // 保存当前作用域作为闭包
+    const closure = this.context.getCurrentScope().clone();
+    
+    // 提取参数名
+    const params = node.params.map(param => {
+      if (param.type === NodeType.Identifier) {
+        return (param as Identifier).name;
+      }
+      throw new RuntimeError('Invalid parameter in arrow function');
+    });
+
+    // 创建可调用的函数对象
+    const arrowFunc = (...args: any[]) => {
+      // 保存当前作用域
+      const previousScope = this.context.getCurrentScope();
+      
+      // 创建新的作用域，继承闭包
+      this.context.enterScope();
+      this.context.getCurrentScope().merge(closure);
+      
+      // 绑定参数
+      for (let i = 0; i < params.length; i++) {
+        this.context.define(params[i], args[i]);
+      }
+      
+      // 执行函数体
+      let result: any = undefined;
+      try {
+        result = this.evaluate(node.body);
+      } catch (error) {
+        if (error instanceof ReturnException) {
+          result = error.value;
+        } else {
+          throw error;
+        }
+      } finally {
+        // 恢复之前的作用域
+        this.context.exitScope();
+      }
+      
+      return result;
+    };
+
+    // 标记为箭头函数
+    (arrowFunc as any).__isArrowFunction = true;
+    (arrowFunc as any).__params = params;
+    (arrowFunc as any).__body = node.body;
+    (arrowFunc as any).__closure = closure;
+
+    return arrowFunc;
   }
 
   /**

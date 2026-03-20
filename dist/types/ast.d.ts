@@ -28,6 +28,7 @@ export declare enum NodeType {
     ContinueStatement = "ContinueStatement",
     VariableDeclaration = "VariableDeclaration",
     FunctionDeclaration = "FunctionDeclaration",
+    ArrowFunctionExpression = "ArrowFunctionExpression",
     ImportStatement = "ImportStatement",
     InExpression = "InExpression",
     LikeExpression = "LikeExpression",
@@ -191,7 +192,7 @@ export interface BetweenExpression extends BaseNode {
 /**
  * 表达式联合类型
  */
-export type Expression = NumberLiteral | StringLiteral | BooleanLiteral | NullLiteral | Identifier | ArrayExpression | ObjectExpression | BinaryExpression | UnaryExpression | ConditionalExpression | AssignmentExpression | UpdateExpression | MemberExpression | CallExpression | NewExpression | InExpression | LikeExpression | BetweenExpression;
+export type Expression = NumberLiteral | StringLiteral | BooleanLiteral | NullLiteral | Identifier | ArrayExpression | ObjectExpression | BinaryExpression | UnaryExpression | ConditionalExpression | AssignmentExpression | UpdateExpression | MemberExpression | CallExpression | NewExpression | ArrowFunctionExpression | InExpression | LikeExpression | BetweenExpression;
 /**
  * 程序节点
  */
@@ -278,6 +279,14 @@ export interface FunctionDeclaration extends BaseNode {
     id: Identifier;
     params: Identifier[];
     body: BlockStatement;
+}
+/**
+ * 箭头函数表达式
+ */
+export interface ArrowFunctionExpression extends BaseNode {
+    type: NodeType.ArrowFunctionExpression;
+    params: Identifier[];
+    body: BlockStatement | Expression;
 }
 /**
  * 导入语句

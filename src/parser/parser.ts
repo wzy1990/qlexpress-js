@@ -21,6 +21,7 @@ import {
   MemberExpression,
   CallExpression,
   NewExpression,
+  ArrowFunctionExpression,
   InExpression,
   LikeExpression,
   BetweenExpression,
@@ -487,6 +488,11 @@ export class Parser {
       } as ConditionalExpression;
     }
 
+    // 检查箭头函数
+    if (this.check(TokenType.ARROW)) {
+      return this.parseArrowFunction(expr);
+    }
+
     return expr;
   }
 
@@ -910,8 +916,43 @@ export class Parser {
 
       case TokenType.LPAREN: {
         this.advance();
+        
+        // 检查是否是箭头函数的参数列表 (a, b) => ...
+        if (this.isArrowParameterList()) {
+          const params = this.parseArrowParameters();
+          this.consume(TokenType.RPAREN, "Expect ')' after parameters");
+          
+          if (this.check(TokenType.ARROW)) {
+            return this.parseArrowFunctionWithParams(params);
+          }
+          
+          // 如果不是箭头函数，则将参数列表转换为逗号表达式
+          if (params.length === 1) {
+            return params[0];
+          } else {
+            // 创建一个逗号表达式
+            let result: Expression = params[0];
+            for (let i = 1; i < params.length; i++) {
+              result = {
+                type: NodeType.BinaryExpression,
+                operator: ',',
+                left: result,
+                right: params[i],
+                loc: result.loc
+              } as BinaryExpression;
+            }
+            return result;
+          }
+        }
+        
         const expr = this.parseExpression();
         this.consume(TokenType.RPAREN, "Expect ')' after expression");
+        
+        // 检查是否是箭头函数 x => ...
+        if (this.check(TokenType.ARROW)) {
+          return this.parseArrowFunction(expr);
+        }
+        
         return expr;
       }
 
@@ -950,6 +991,160 @@ export class Parser {
       arguments: args,
       loc: this.createLocation(token)
     } as NewExpression;
+  }
+
+  /**
+   * 检查是否是箭头函数的参数列表
+   */
+  private isArrowParameterList(): boolean {
+    let index = this.current;
+    
+    // 跳过换行
+    while (index < this.tokens.length && this.tokens[index].type === TokenType.NEWLINE) {
+      index++;
+    }
+    
+    if (index >= this.tokens.length) return false;
+    
+    // 第一个必须是标识符
+    if (this.tokens[index].type !== TokenType.IDENTIFIER) return false;
+    index++;
+    
+    // 跳过换行
+    while (index < this.tokens.length && this.tokens[index].type === TokenType.NEWLINE) {
+      index++;
+    }
+    
+    // 检查后续是否是逗号分隔的标识符
+    while (index < this.tokens.length) {
+      const token = this.tokens[index];
+      
+      if (token.type === TokenType.RPAREN) {
+        // 到达右括号，是参数列表
+        return true;
+      }
+      
+      if (token.type === TokenType.COMMA) {
+        index++;
+        // 跳过换行
+        while (index < this.tokens.length && this.tokens[index].type === TokenType.NEWLINE) {
+          index++;
+        }
+        // 逗号后必须是标识符
+        if (index >= this.tokens.length || this.tokens[index].type !== TokenType.IDENTIFIER) {
+          return false;
+        }
+        index++;
+      } else if (token.type === TokenType.NEWLINE) {
+        index++;
+      } else {
+        return false;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * 解析箭头函数的参数列表
+   */
+  private parseArrowParameters(): Identifier[] {
+    const params: Identifier[] = [];
+    
+    do {
+      // 跳过换行
+      while (this.check(TokenType.NEWLINE)) {
+        this.advance();
+      }
+      
+      const paramToken = this.consume(TokenType.IDENTIFIER, "Expect parameter name");
+      params.push({
+        type: NodeType.Identifier,
+        name: paramToken.value,
+        loc: this.createLocation(paramToken)
+      } as Identifier);
+      
+      // 跳过换行
+      while (this.check(TokenType.NEWLINE)) {
+        this.advance();
+      }
+    } while (this.match(TokenType.COMMA));
+    
+    return params;
+  }
+
+  /**
+   * 解析箭头函数表达式（带参数列表）
+   */
+  private parseArrowFunctionWithParams(params: Identifier[]): ArrowFunctionExpression {
+    const token = this.advance(); // 消费 ARROW token
+
+    let body: Expression | BlockStatement;
+
+    // 检查是否是块级体
+    if (this.check(TokenType.LBRACE)) {
+      body = this.parseBlockStatement();
+    } else {
+      // 简洁体
+      body = this.parseAssignment();
+    }
+
+    return {
+      type: NodeType.ArrowFunctionExpression,
+      params,
+      body,
+      loc: this.createLocation(token)
+    } as ArrowFunctionExpression;
+  }
+
+  /**
+   * 解析箭头函数表达式
+   */
+  private parseArrowFunction(leftExpr: Expression): ArrowFunctionExpression {
+    const token = this.previous(); // ARROW token
+
+    let params: Identifier[] = [];
+
+    // 如果左边是标识符，则是单参数箭头函数
+    if (leftExpr.type === NodeType.Identifier) {
+      params = [leftExpr as Identifier];
+    } else if (leftExpr.type === NodeType.CallExpression) {
+      // 如果是 (a, b) 形式，从调用表达式中提取参数
+      const callExpr = leftExpr as CallExpression;
+      if (callExpr.callee.type === NodeType.Identifier) {
+        // 检查是否是 (a, b) => ... 形式
+        // 这种情况下，callee 应该是一个标识符，但我们需要从 arguments 中提取参数
+        // 实际上，这种情况下应该是在 parsePrimary 中处理 (a, b) 形式
+        // 这里我们假设 arguments 是标识符列表
+        for (const arg of callExpr.arguments) {
+          if (arg.type === NodeType.Identifier) {
+            params.push(arg as Identifier);
+          } else {
+            throw new ParseError(`Invalid arrow function parameter`, token);
+          }
+        }
+      }
+    }
+
+    // 消费 ARROW token
+    this.advance();
+
+    let body: Expression | BlockStatement;
+
+    // 检查是否是块级体
+    if (this.check(TokenType.LBRACE)) {
+      body = this.parseBlockStatement();
+    } else {
+      // 简洁体
+      body = this.parseAssignment();
+    }
+
+    return {
+      type: NodeType.ArrowFunctionExpression,
+      params,
+      body,
+      loc: this.createLocation(token)
+    } as ArrowFunctionExpression;
   }
 
   /**

@@ -56,6 +56,7 @@ export declare enum TokenType {
     DECREMENT = "DECREMENT",// --
     QUESTION = "QUESTION",// ?
     COLON = "COLON",// :
+    ARROW = "ARROW",// =>
     LPAREN = "LPAREN",// (
     RPAREN = "RPAREN",// )
     LBRACE = "LBRACE",// {

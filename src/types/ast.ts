@@ -39,6 +39,7 @@ export enum NodeType {
   ContinueStatement = 'ContinueStatement',
   VariableDeclaration = 'VariableDeclaration',
   FunctionDeclaration = 'FunctionDeclaration',
+  ArrowFunctionExpression = 'ArrowFunctionExpression',
   ImportStatement = 'ImportStatement',
 
   // 特殊
@@ -243,6 +244,7 @@ export type Expression =
   | MemberExpression
   | CallExpression
   | NewExpression
+  | ArrowFunctionExpression
   | InExpression
   | LikeExpression
   | BetweenExpression;
@@ -344,6 +346,15 @@ export interface FunctionDeclaration extends BaseNode {
   id: Identifier;
   params: Identifier[];
   body: BlockStatement;
+}
+
+/**
+ * 箭头函数表达式
+ */
+export interface ArrowFunctionExpression extends BaseNode {
+  type: NodeType.ArrowFunctionExpression;
+  params: Identifier[];
+  body: BlockStatement | Expression;
 }
 
 /**

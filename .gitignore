@@ -1,0 +1,40 @@
+# 依赖目录
+node_modules/
+
+# 构建输出目录
+dist/
+
+# 浏览器打包文件（如果通过构建生成）
+# qlexpress-browser.js
+
+# TypeScript 缓存
+*.tsbuildinfo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE 配置和缓存
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 测试覆盖率输出
+coverage/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 临时文件
+tmp/
+temp/

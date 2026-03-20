@@ -49,6 +49,14 @@ export declare class Scope implements IContext {
      * 创建子作用域
      */
     createChild(): Scope;
+    /**
+     * 克隆当前作用域（用于闭包）
+     */
+    clone(): Scope;
+    /**
+     * 合并另一个作用域的变量到当前作用域
+     */
+    merge(other: Scope): void;
 }
 /**
  * 运行时上下文

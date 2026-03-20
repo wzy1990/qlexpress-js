@@ -122,6 +122,29 @@ export class Scope implements IContext {
   createChild(): Scope {
     return new Scope(this);
   }
+
+  /**
+   * 克隆当前作用域（用于闭包）
+   */
+  clone(): Scope {
+    const cloned = new Scope(this.parent);
+    // 复制当前作用域的所有变量
+    this.variables.forEach((value, key) => {
+      cloned.define(key, value);
+    });
+    return cloned;
+  }
+
+  /**
+   * 合并另一个作用域的变量到当前作用域
+   */
+  merge(other: Scope): void {
+    other.variables.forEach((value, key) => {
+      if (!this.variables.has(key)) {
+        this.variables.set(key, value);
+      }
+    });
+  }
 }
 
 /**

@@ -74,6 +74,9 @@ export enum TokenType {
   QUESTION = 'QUESTION',   // ?
   COLON = 'COLON',         // :
 
+  // 箭头函数
+  ARROW = 'ARROW',         // =>
+
   // 分隔符
   LPAREN = 'LPAREN',       // (
   RPAREN = 'RPAREN',       // )

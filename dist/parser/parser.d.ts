@@ -134,6 +134,22 @@ export declare class Parser {
      */
     private parseNewExpression;
     /**
+     * 检查是否是箭头函数的参数列表
+     */
+    private isArrowParameterList;
+    /**
+     * 解析箭头函数的参数列表
+     */
+    private parseArrowParameters;
+    /**
+     * 解析箭头函数表达式（带参数列表）
+     */
+    private parseArrowFunctionWithParams;
+    /**
+     * 解析箭头函数表达式
+     */
+    private parseArrowFunction;
+    /**
      * 解析数组表达式
      */
     private parseArrayExpression;

@@ -96,6 +96,10 @@ export declare class Interpreter {
      */
     private evaluateNewExpression;
     /**
+     * 评估箭头函数表达式
+     */
+    private evaluateArrowFunctionExpression;
+    /**
      * 评估IN表达式
      */
     private evaluateInExpression;

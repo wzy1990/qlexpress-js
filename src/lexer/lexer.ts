@@ -207,7 +207,7 @@ export class Lexer {
             this.addToken(TokenType.EQ, '==');
           }
         } else if (this.match('>')) {
-          this.addToken(TokenType.COLON, '=>');
+          this.addToken(TokenType.ARROW, '=>');
         } else {
           this.addToken(TokenType.ASSIGN, '=');
         }
