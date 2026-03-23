@@ -212,47 +212,47 @@ const ExpressionEditor: React.FC = () => {
 
       {/* 主内容区域 */}
       <main className="main-content">
-        {/* 表达式输入 */}
-        <div className="card">
-          <div className="card-header">表达式输入</div>
-          <div className="card-body">
-            <MonacoEditor
-              width="100%"
-              height="300px"
-              language="javascript"
-              // theme="vs-dark"
-              value={expression}
-              onChange={(value) => setExpression(value || '')}
-              options={{
-                minimap: { enabled: true },
-                fontSize: 14,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 1,
-                wordWrap: 'off'
-              }}
-            />
-            <div className="btn-group">
-              <button className="btn btn-primary" onClick={handleExecute}>
-                执行表达式
-              </button>
-              <button className="btn btn-secondary" onClick={handleClear}>
-                清除结果
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 变量和输出区域 */}
-        <div className="card">
-          <div className="card-header">变量输入 & 执行结果</div>
-          <div className="card-body">
-            <div className="form-group">
-              <label>变量上下文（JSON格式）：</label>
+        {/* 第一行：表达式输入和变量输入 */}
+        <div className="grid-row">
+          {/* 表达式输入 */}
+          <div className="card card-left">
+            <div className="card-header">表达式输入</div>
+            <div className="card-body">
               <MonacoEditor
                 width="100%"
-                height="200px"
+                height="300px"
+                language="javascript"
+                // theme="vs-dark"
+                value={expression}
+                onChange={(value) => setExpression(value || '')}
+                options={{
+                  minimap: { enabled: true },
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 1,
+                  wordWrap: 'off'
+                }}
+              />
+              <div className="btn-group">
+                <button className="btn btn-primary" onClick={handleExecute}>
+                  执行表达式
+                </button>
+                <button className="btn btn-secondary" onClick={handleClear}>
+                  清除结果
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 变量输入 */}
+          <div className="card card-right">
+            <div className="card-header">变量输入</div>
+            <div className="card-body">
+              <MonacoEditor
+                width="100%"
+                height="300px"
                 language="json"
                 // theme="vs-dark"
                 value={context}
@@ -268,8 +268,15 @@ const ExpressionEditor: React.FC = () => {
                 }}
               />
             </div>
-            <div className="form-group">
-              <label>执行结果：</label>
+          </div>
+        </div>
+
+        {/* 第二行：执行结果和统计卡片 */}
+        <div className="grid-row">
+          {/* 执行结果 */}
+          <div className="card card-left">
+            <div className="card-header">执行结果</div>
+            <div className="card-body">
               <div className={`result-area ${error ? 'error' : result ? 'success' : 'empty'}`}>
                 {error || result || '点击"执行表达式"按钮查看结果...'}
               </div>
@@ -280,21 +287,21 @@ const ExpressionEditor: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
 
-        {/* 统计卡片 */}
-        <div className="stats-container">
-          <div className="stat-card total">
-            <div className="stat-value">{stats.total}</div>
-            <div className="stat-label">总执行次数</div>
-          </div>
-          <div className="stat-card success">
-            <div className="stat-value">{stats.success}</div>
-            <div className="stat-label">成功次数</div>
-          </div>
-          <div className="stat-card error">
-            <div className="stat-value">{stats.error}</div>
-            <div className="stat-label">失败次数</div>
+          {/* 统计卡片 */}
+          <div className="stats-column">
+            <div className="stat-card total">
+              <div className="stat-value">{stats.total}</div>
+              <div className="stat-label">总执行次数</div>
+            </div>
+            <div className="stat-card success">
+              <div className="stat-value">{stats.success}</div>
+              <div className="stat-label">成功次数</div>
+            </div>
+            <div className="stat-card error">
+              <div className="stat-value">{stats.error}</div>
+              <div className="stat-label">失败次数</div>
+            </div>
           </div>
         </div>
       </main>

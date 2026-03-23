@@ -2,7 +2,7 @@
  * @Author: 王志永
  * @Date: 2026-03-22 11:39:38
  * @LastEditors: 王志永
- * @LastEditTime: 2026-03-23 14:29:36
+ * @LastEditTime: 2026-03-23 16:37:01
  * @Description: 表达式配置组件，用于演示如何在React项目中实现一个表达式配置组件。该组件允许用户通过选择变量和函数来构建自定义的数学或逻辑表达式，并通过Monaco编辑器进行实时预览和编辑。
  */
 import React, { useState, useRef } from 'react';
@@ -106,6 +106,7 @@ const ExpressionConfig: React.FC = () => {
             }}
           />
         </div>
+        <div>{expression}</div>
       </div>
       
       <div className="expression-tools-section">
