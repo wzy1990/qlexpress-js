@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import ExpressionConfig from './components/ExpressionConfig'
 import ExpressionEditor from './components/ExpressionEditor'
-import './App.css'
+import './App.less'
 
 function App() {
   const [showConfig, setShowConfig] = useState(false)

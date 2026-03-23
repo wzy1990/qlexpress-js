@@ -1,0 +1,46 @@
+.app {
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  color: white;
+  margin-bottom: 20px;
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  height: calc(100% - 150px);
+}
+
+&::-webkit-scrollbar {
+  width: 6px;
+}
+
+&::-webkit-scrollbar-track {
+  background-color: #f0f2f5;
+  border-radius: 3px;
+}
+
+&::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 3px;
+
+  &:hover {
+    background-color: #a8a8a8;
+  }
+}

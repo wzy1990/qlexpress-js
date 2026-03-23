@@ -2,13 +2,13 @@
  * @Author: 王志永
  * @Date: 2026-03-22 11:39:38
  * @LastEditors: 王志永
- * @LastEditTime: 2026-03-22 21:27:12
+ * @LastEditTime: 2026-03-23 14:29:36
  * @Description: 表达式配置组件，用于演示如何在React项目中实现一个表达式配置组件。该组件允许用户通过选择变量和函数来构建自定义的数学或逻辑表达式，并通过Monaco编辑器进行实时预览和编辑。
  */
 import React, { useState, useRef } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import { FunctionItem, VariableItem, variables, categories, functions } from './data';
-import './index.css';
+import './index.less';
 
 const ExpressionConfig: React.FC = () => {
   const [expression, setExpression] = useState<string>('');
@@ -96,13 +96,13 @@ const ExpressionConfig: React.FC = () => {
               editorRef.current = editor;
             }}
             options={{
-              minimap: { enabled: false },
+              minimap: { enabled: true },
               fontSize: 14,
               lineNumbers: 'on',
               scrollBeyondLastLine: false,
               automaticLayout: true,
-              tabSize: 2,
-              wordWrap: 'on',
+              tabSize: 1,
+              wordWrap: 'off',
             }}
           />
         </div>

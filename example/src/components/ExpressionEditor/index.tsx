@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import { ExpressRunner } from 'qlexpress-js';
-import './index.css';
+import './index.less';
 
 interface Example {
   tag: string;
@@ -100,11 +100,7 @@ const examples: Example[] = [
 
 const ExpressionEditor: React.FC = () => {
   const [expression, setExpression] = useState('a + b * c');
-  const [context, setContext] = useState(`{
-  "a": 1,
-  "b": 2,
-  "c": 3
-}`);
+  const [context, setContext] = useState(JSON.stringify({ a: 1, b: 2, c: 3 }));
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [executionTime, setExecutionTime] = useState<number>(0);
@@ -224,7 +220,7 @@ const ExpressionEditor: React.FC = () => {
               width="100%"
               height="300px"
               language="javascript"
-              theme="vs-dark"
+              // theme="vs-dark"
               value={expression}
               onChange={(value) => setExpression(value || '')}
               options={{
@@ -233,8 +229,8 @@ const ExpressionEditor: React.FC = () => {
                 lineNumbers: 'on',
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
-                tabSize: 2,
-                wordWrap: 'on'
+                tabSize: 1,
+                wordWrap: 'off'
               }}
             />
             <div className="btn-group">
@@ -258,7 +254,7 @@ const ExpressionEditor: React.FC = () => {
                 width="100%"
                 height="200px"
                 language="json"
-                theme="vs-dark"
+                // theme="vs-dark"
                 value={context}
                 onChange={(value: string) => setContext(value || '')}
                 options={{
@@ -267,8 +263,8 @@ const ExpressionEditor: React.FC = () => {
                   lineNumbers: 'on',
                   scrollBeyondLastLine: false,
                   automaticLayout: true,
-                  tabSize: 2,
-                  wordWrap: 'on'
+                  tabSize: 1,
+                  wordWrap: 'off'
                 }}
               />
             </div>
