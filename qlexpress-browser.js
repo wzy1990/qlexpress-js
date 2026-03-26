@@ -1858,6 +1858,14 @@ var QLExpress = (function (exports) {
           this.current = savedCurrent;
           return isObject;
       }
+      /**
+       * 检查并跳过换行符
+       */
+      skipNewlines() {
+          while (this.current < this.tokens.length && this.tokens[this.current].type === TokenType.NEWLINE) {
+              this.current++;
+          }
+      }
       peek() {
           return this.tokens[this.current];
       }
@@ -1878,11 +1886,18 @@ var QLExpress = (function (exports) {
           return this.peek().type === TokenType.EOF;
       }
       check(type) {
+          // 检查前也要跳过换行符
+          this.skipNewlines();
           if (this.isAtEnd())
               return false;
           return this.peek().type === type;
       }
+      /**
+       * 匹配指定类型的 Token，会在匹配前跳过换行符
+       */
       match(type) {
+          // 先跳过换行符
+          this.skipNewlines();
           if (this.check(type)) {
               this.advance();
               return true;
@@ -1890,6 +1905,8 @@ var QLExpress = (function (exports) {
           return false;
       }
       consume(type, message) {
+          // consume 前也要跳过换行符
+          this.skipNewlines();
           if (this.check(type))
               return this.advance();
           throw new ParseError(message, this.peek());

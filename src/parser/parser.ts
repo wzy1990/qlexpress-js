@@ -1270,6 +1270,15 @@ export class Parser {
     return isObject;
   }
 
+  /**
+   * 检查并跳过换行符
+   */
+  private skipNewlines(): void {
+    while (this.current < this.tokens.length && this.tokens[this.current].type === TokenType.NEWLINE) {
+      this.current++;
+    }
+  }
+
   private peek(): Token {
     return this.tokens[this.current];
   }
@@ -1293,11 +1302,19 @@ export class Parser {
   }
 
   private check(type: TokenType): boolean {
+    // 检查前也要跳过换行符
+    this.skipNewlines();
     if (this.isAtEnd()) return false;
     return this.peek().type === type;
   }
 
+  /**
+   * 匹配指定类型的 Token，会在匹配前跳过换行符
+   */
   private match(type: TokenType): boolean {
+    // 先跳过换行符
+    this.skipNewlines();
+    
     if (this.check(type)) {
       this.advance();
       return true;
@@ -1306,6 +1323,9 @@ export class Parser {
   }
 
   private consume(type: TokenType, message: string): Token {
+    // consume 前也要跳过换行符
+    this.skipNewlines();
+    
     if (this.check(type)) return this.advance();
     throw new ParseError(message, this.peek());
   }

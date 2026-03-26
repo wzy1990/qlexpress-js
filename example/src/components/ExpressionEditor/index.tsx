@@ -95,11 +95,68 @@ const examples: Example[] = [
     description: '逻辑运算符示例',
     expression: `a = true; b = false; return a && b || !a`,
     context: {}
+  },
+  // ========== 多行表达式测试用例 ==========
+  {
+    tag: '多行运算',
+    title: '多行加减法',
+    description: '带换行的价格计算',
+    expression: `商家应收=\n    价格\n   - 饭卡商家承担\n   + 平台补贴`,
+    context: { '价格': 100, '饭卡商家承担': 10, '平台补贴': 5 }
+  },
+  {
+    tag: '多行运算',
+    title: '多行乘除法',
+    description: '多行格式的四则运算',
+    expression: `result =\n    a\n   * b\n   / c`,
+    context: { a: 12, b: 3, c: 2 }
+  },
+  {
+    tag: '多行运算',
+    title: '复杂混合运算',
+    description: '多行格式的混合四则运算',
+    expression: `total =\n    价格\n   * 数量\n   - 折扣\n   + 税费`,
+    context: { '价格': 100, '数量': 2, '折扣': 20, '税费': 10 }
+  },
+  {
+    tag: '多行运算',
+    title: '多行逻辑运算',
+    description: '多行格式的逻辑表达式',
+    expression: `result =\n    条件 1\n   && 条件 2\n   || 条件 3`,
+    context: { '条件 1': true, '条件 2': false, '条件 3': true }
+  },
+  {
+    tag: '多行运算',
+    title: '多行比较运算',
+    description: '多行格式的比较表达式',
+    expression: `result =\n    数值 1\n   > 数值 2\n   && 数值 1\n   < 数值 3`,
+    context: { '数值 1': 50, '数值 2': 30, '数值 3': 100 }
+  },
+  {
+    tag: '多行运算',
+    title: '括号嵌套运算',
+    description: '带括号的多行复杂运算',
+    expression: `final =\n    (a + b)\n   * (c - d)\n   / e`,
+    context: { a: 10, b: 20, c: 30, d: 5, e: 5 }
+  },
+  {
+    tag: '多行运算',
+    title: '带空格缩进',
+    description: '包含空格和缩进的多行表达式',
+    expression: `  计算  =\n      值 1\n    + 值 2\n    - 值 3\n  `,
+    context: { '值 1': 100, '值 2': 50, '值 3': 30 }
+  },
+  {
+    tag: '多行运算',
+    title: '中文变量名',
+    description: '使用中文变量名的多行表达式',
+    expression: `总收入=\n    销售额\n   + 服务费\n   - 成本`,
+    context: { '销售额': 1000, '服务费': 200, '成本': 500 }
   }
 ];
 
 const ExpressionEditor: React.FC = () => {
-  const [expression, setExpression] = useState('a + b * c');
+  const [expression, setExpression] = useState('a=\n    b\n    -  c\n    + a');
   const [context, setContext] = useState(JSON.stringify({ a: 1, b: 2, c: 3 }));
   const [result, setResult] = useState('');
   const [error, setError] = useState('');

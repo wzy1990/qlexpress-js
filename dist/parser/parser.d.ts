@@ -162,12 +162,19 @@ export declare class Parser {
      * 对象字面量: { 后面跟着标识符/字符串/数字，然后是冒号
      */
     private isObjectLiteral;
+    /**
+     * 检查并跳过换行符
+     */
+    private skipNewlines;
     private peek;
     private peekNext;
     private previous;
     private advance;
     private isAtEnd;
     private check;
+    /**
+     * 匹配指定类型的 Token，会在匹配前跳过换行符
+     */
     private match;
     private consume;
     private createLocation;

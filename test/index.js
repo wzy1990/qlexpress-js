@@ -110,6 +110,62 @@ test('复杂表达式', () => {
   assertEqual(runner.execute('10 - 2 * 3 + 4').value, 8);
 });
 
+test('多行表达式 - 加减法', () => {
+  const expression = '商家应收=\n    价格\n   - 饭卡商家承担\n   + 平台补贴';
+  const context = { '价格': 100, '饭卡商家承担': 10, '平台补贴': 5 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, 95);
+});
+
+test('多行表达式 - 乘除法', () => {
+  const expression = 'result =\n    a\n   * b\n   / c';
+  const context = { a: 12, b: 3, c: 2 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, 18);
+});
+
+test('多行表达式 - 混合运算', () => {
+  const expression = 'total =\n    价格\n   * 数量\n   - 折扣\n   + 税费';
+  const context = { '价格': 100, '数量': 2, '折扣': 20, '税费': 10 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, 190);
+});
+
+test('多行表达式 - 逻辑运算', () => {
+  const expression = 'result =\n    条件1\n   && 条件2\n   || 条件3';
+  const context = { '条件1': true, '条件2': false, '条件3': true };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, true);
+});
+
+test('多行表达式 - 比较运算', () => {
+  const expression = 'result =\n    数值1\n   > 数值2\n   && 数值1\n   < 数值3';
+  const context = { '数值1': 50, '数值2': 30, '数值3': 100 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, true);
+});
+
+test('多行表达式 - 复杂嵌套', () => {
+  const expression = 'final =\n    (a + b)\n   * (c - d)\n   / e';
+  const context = { a: 10, b: 20, c: 30, d: 5, e: 5 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, 150);
+});
+
+test('多行表达式 - 带空格和缩进', () => {
+  const expression = '  计算  =\n      值1\n    + 值2\n    - 值3\n  ';
+  const context = { '值1': 100, '值2': 50, '值3': 30 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, 120);
+});
+
+test('多行表达式 - 中文变量名', () => {
+  const expression = '总收入=\n    销售额\n   + 服务费\n   - 成本';
+  const context = { '销售额': 1000, '服务费': 200, '成本': 500 };
+  const result = runner.execute(expression, context);
+  assertEqual(result.value, 700);
+});
+
 // ============ 比较运算测试 ============
 console.log('\n--- 比较运算测试 ---\n');
 
