@@ -2,10 +2,10 @@
  * @Author: 王志永
  * @Date: 2026-03-22 11:39:38
  * @LastEditors: 王志永
- * @LastEditTime: 2026-03-26 15:29:54
+ * @LastEditTime: 2026-03-26 22:44:02
  * @Description: 表达式配置组件，用于演示如何在React项目中实现一个表达式配置组件。该组件允许用户通过选择变量和函数来构建自定义的数学或逻辑表达式，并通过Monaco编辑器进行实时预览和编辑。
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import { FunctionItem, VariableItem, variables, categories, functions } from './data';
 import './index.less';
@@ -24,16 +24,6 @@ const ExpressionConfig: React.FC = () => {
       func.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
-
-  useEffect(() => {
-    // setExpression('商家应收=\n    价格\n   - 饭卡商家承担\n   + 平台补贴');
-    setExpression('商家应收=\r\n    价格\r\n    - 饭卡商家承担\r\n    + 平台补贴')
-    
-    // 可选：在编辑器加载完成后，将光标移动到第一行
-    if (editorRef.current) {
-      editorRef.current.setPosition({ lineNumber: 1, column: 1 });
-    }
-  }, []);
 
   // 插入变量到表达式中
   const handleInsertVariable = (variable: VariableItem) => {
@@ -87,25 +77,6 @@ const ExpressionConfig: React.FC = () => {
     }
   };
 
-  // 保存表达式到后端
-  const handleSaveToBackend = async () => {
-    try {
-      // expression 状态变量已经包含了完整的带换行和空格的字符串
-      // Monaco Editor 的 onChange 会自动保留所有格式字符（\n 和空格）
-      const backendExpression = expression;
-      
-      console.log('准备发送到后端的表达式:', backendExpression);
-      console.log('表达式字符串:', JSON.stringify({
-        expression: backendExpression, // 直接发送，保留原始格式
-      }));
-      console.log('表达式长度:', backendExpression.length);
-      console.log('包含的换行符数量:', (backendExpression.match(/\n/g) || []).length);
-
-    } catch (error) {
-      console.error('保存失败:', error);
-    }
-  };
-
   return (
     <div className="expression-config-container">
       <div className="expression-config-header">
@@ -131,14 +102,7 @@ const ExpressionConfig: React.FC = () => {
               scrollBeyondLastLine: false,
               automaticLayout: true,
               tabSize: 2,
-              wordWrap: 'off', // 关闭自动换行，保留原始格式
-              wrappingStrategy: 'advanced',
-              folding: false, // 关闭折叠功能
-              formatOnPaste: false, // 禁用粘贴时格式化，保留原始空格和换行
-              formatOnType: false, // 禁用输入时格式化，保留原始格式
-              autoIndent: 'none', // 禁用自动缩进
-              suggestOnTriggerCharacters: true, // 禁用触发字符自动提示
-              quickSuggestions: true, // 禁用快速建议
+              wordWrap: 'on',
             }}
           />
         </div>
@@ -223,8 +187,8 @@ const ExpressionConfig: React.FC = () => {
       </div>
       
       <div className="expression-config-footer">
-        <button className="btn btn-secondary" onClick={() => setExpression('')}>取消</button>
-        <button className="btn btn-primary" onClick={handleSaveToBackend}>确定</button>
+        <button className="btn btn-secondary">取消</button>
+        <button className="btn btn-primary">确定</button>
       </div>
     </div>
   );

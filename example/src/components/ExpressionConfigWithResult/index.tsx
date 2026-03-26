@@ -2,13 +2,14 @@
  * @Author: 王志永
  * @Date: 2026-03-26 15:44:17
  * @LastEditors: 王志永
- * @LastEditTime: 2026-03-26 18:21:30
+ * @LastEditTime: 2026-03-26 22:53:28
  * @Description: 表达式配置组件（带计算结果），在 ExpressionConfig 基础上增加了参数录入和表达式计算结果展示功能
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import MonacoEditor from 'react-monaco-editor';
 import { ExpressRunner } from 'qlexpress-js';
 import { FunctionItem, VariableItem, variables, categories, functions } from '../ExpressionConfig/data';
+import * as CustomFunctions from '../ExpressionConfig/functions';
 import './index.less';
 
 const ExpressionConfigWithResult: React.FC = () => {
@@ -26,6 +27,16 @@ const ExpressionConfigWithResult: React.FC = () => {
   const [executionTime, setExecutionTime] = useState<number>(0);
   const editorRef = useRef<any>(null);
   const contextEditorRef = useRef<any>(null);
+
+  // 创建表达式运行器实例，并批量注册自定义函数
+  const runner = new ExpressRunner();
+  Object.entries(CustomFunctions).forEach(([name, handler]) => { // 批量注册自定义函数
+    if (name !== 'default' && typeof handler === 'function') {
+      runner.addFunction(name, handler);
+    } else {
+      console.error(`Invalid function handler for ${name}. Expected a function, got:`, typeof handler);
+    }
+  });
 
   // 筛选函数列表
   const filteredFunctions = functions.filter((func: FunctionItem) => {
@@ -81,7 +92,8 @@ const ExpressionConfigWithResult: React.FC = () => {
       // 执行
       let executeResult: any;
       try {
-        const runner = new ExpressRunner();
+        // const runner = new ExpressRunner();
+        // 现在可以使用所有自定义函数和表达式执行器
         executeResult = runner.execute(expression, contextObj);
       } catch (e: any) {
         throw new Error(e.message);
