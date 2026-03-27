@@ -1112,37 +1112,43 @@ export const YEARDELTA = (date: string, delta: number): string => {
 };
 
 // 统计函数实现
+// 辅助函数：将各种类型转换为数字
+const canConvertToNumber = (value: any): boolean => {
+  return typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)));
+};
+const convertToNumber = (value: any): number => {
+  return typeof value === 'boolean' ? (value ? 1 : 0) :
+         typeof value === 'string' ? (isNaN(Number(value)) ? 0 : Number(value)) :
+         typeof value === 'number' ? value : 0;
+};
+
 export const AVERAGE = (...args: any[]): number => {
   let count = 0;
   let sum = 0;
   let countString = true;
-  
+
   if (args.length > 0 && typeof args[args.length - 1] === 'boolean') {
     countString = args.pop();
   }
-  
+
   args.forEach((arg: any) => {
     if (Array.isArray(arg)) {
       arg.forEach((item: any) => {
-        if (countString || typeof item === 'number') {
-          const num = typeof item === 'boolean' ? (item ? 1 : 0) : 
-                      typeof item === 'string' ? (isNaN(Number(item)) ? 0 : Number(item)) : 
-                      typeof item === 'number' ? item : 0;
+        if (countString || canConvertToNumber(item)) {
+          const num = convertToNumber(item);
           sum += num;
           count++;
         }
       });
     } else {
-      if (countString || typeof arg === 'number') {
-        const num = typeof arg === 'boolean' ? (arg ? 1 : 0) : 
-                    typeof arg === 'string' ? (isNaN(Number(arg)) ? 0 : Number(arg)) : 
-                    typeof arg === 'number' ? arg : 0;
+      if (countString || canConvertToNumber(arg)) {
+        const num = convertToNumber(arg);
         sum += num;
         count++;
       }
     }
   });
-  
+
   return count > 0 ? sum / count : 0;
 };
 
@@ -1160,12 +1166,12 @@ export const COUNT = (...args: any[]): number => {
   return count;
 };
 
-export const MAX = (...args: number[]): number => {
-  return Math.max(...args);
+export const MAX = (...args: any[]): number => {
+  return Math.max(...args.map(convertToNumber));
 };
 
-export const MIN = (...args: number[]): number => {
-  return Math.min(...args);
+export const MIN = (...args: any[]): number => {
+  return Math.min(...args.map(convertToNumber));
 };
 
 export const SUM = (...args: any[]): number => {
@@ -1174,15 +1180,11 @@ export const SUM = (...args: any[]): number => {
   args.forEach((arg: any) => {
     if (Array.isArray(arg)) {
       arg.forEach((item: any) => {
-        const num = typeof item === 'boolean' ? (item ? 1 : 0) : 
-                    typeof item === 'string' ? (isNaN(Number(item)) ? 0 : Number(item)) : 
-                    typeof item === 'number' ? item : 0;
+        const num = convertToNumber(item);
         sum += num;
       });
     } else {
-      const num = typeof arg === 'boolean' ? (arg ? 1 : 0) : 
-                  typeof arg === 'string' ? (isNaN(Number(arg)) ? 0 : Number(arg)) : 
-                  typeof arg === 'number' ? arg : 0;
+      const num = convertToNumber(arg);
       sum += num;
     }
   });
