@@ -1,21 +1,21 @@
 // 三角函数实现
 export const ACOS = (number: number): number => {
   if (number < -1 || number > 1) {
-    throw new Error('ACOS: number value must be between -1 and 1');
+    throw new Error('ACOS: number值必须在-1~1之间（包括-1和1）。');
   }
   return Math.acos(number);
 };
 
 export const ACOSH = (number: number): number => {
   if (number < 1) {
-    throw new Error('ACOSH: number value must be greater than or equal to 1');
+    throw new Error('ACOSH: number值必须大于等于1');
   }
   return Math.acosh(number);
 };
 
 export const ASIN = (number: number): number => {
   if (number < -1 || number > 1) {
-    throw new Error('ASIN: number value must be between -1 and 1');
+    throw new Error('ASIN: number值必须在 -1 到 1 之间（含 1 与 -1）');
   }
   return Math.asin(number);
 };
@@ -30,14 +30,14 @@ export const ATAN = (number: number): number => {
 
 export const ATAN2 = (x: number, y: number): number => {
   if (x === 0 && y === 0) {
-    throw new Error('ATAN2: x and y cannot both be 0');
+    throw new Error('ATAN2: x 与 y 不可同时为0。');
   }
   return Math.atan2(x, y);
 };
 
 export const ATANH = (number: number): number => {
   if (number <= -1 || number >= 1) {
-    throw new Error('ATANH: number value must be between -1 and 1 (exclusive)');
+    throw new Error('ATANH: number值必须介于-1~1之间（不包括-1，1）');
   }
   return Math.atanh(number);
 };
@@ -80,19 +80,36 @@ export const ABS = (number: number): number => {
 };
 
 export const CEILING = (number: number): number => {
-  return Math.ceil(number);
+  // 沿绝对值增大的方向舍入到最接近的整数
+  // 正数：向上取整 (如 0.5 -> 1)
+  // 负数：向下取整 (如 -2.5 -> -3)
+  if (number >= 0) {
+    return Math.ceil(number);
+  } else {
+    return Math.floor(number);
+  }
 };
 
 export const DECIMAL = (number: number): number => {
+  // 如需支持更高精度的大数类型（如 Java 中的 BigDecimal），
+  // 则需要引入专门的 JavaScript 大数库（如 decimal.js 或 big.js）
   return parseFloat(number.toString());
 };
 
 export const FLOOR = (number: number): number => {
-  return Math.floor(number);
+  // 沿绝对值减小的方向去尾舍入
+  // 正数：向下取整 (2.5 -> 2)
+  // 负数：向零取整 (-3.5 -> -3)
+  if (number >= 0) {
+    return Math.floor(number);
+  } else {
+    return Math.ceil(number);
+  }
 };
 
 export const INT = (number: number): number => {
-  return number > 0 ? Math.floor(number) : Math.ceil(number);
+  // 下舍入（数值减小的方向），即向负无穷方向取整
+  return Math.floor(number);
 };
 
 export const MOD = (number: number, divisor: number): number => {
@@ -106,8 +123,15 @@ export const PRODUCT = (...numbers: number[]): number => {
   return numbers.reduce((acc, curr) => acc * curr, 1);
 };
 
-export const PROMOTION = (number1: number, number2: number): number => {
+// 返回number2在number1上提升的比例（返回值还是百分比，待验证优化）
+export const PROMOTION = (number1: number, number2: number): string | number => {
   return number2 - number1;
+  // if (number1 === 0) {
+  //   // 相对于0的提升，直接乘以100%
+  //   return (number2 * 100) + '%';
+  // }
+  // const promotion = (number2 - number1) / Math.abs(number1) * 100;
+  // return promotion + '%';
 };
 
 export const RAND = (): number => {
@@ -122,17 +146,42 @@ export const RANDBETWEEN = (number1: number, number2: number): number => {
 
 export const ROUND = (number: number, num_digits: number): number => {
   const factor = Math.pow(10, num_digits);
-  return Math.round(number * factor) / factor;
+  const result = number * factor;
+  // Excel 的 ROUND 使用 "round half away from zero" 方式
+  // 即 .5 总是向远离零的方向舍入
+  const absResult = Math.abs(result);
+  const intPart = Math.floor(absResult);
+  const decimalPart = absResult - intPart;
+  
+  let roundedAbs: number;
+  if (decimalPart > 0.5) {
+    roundedAbs = intPart + 1;
+  } else if (decimalPart === 0.5) {
+    // .5 时向远离零的方向舍入
+    roundedAbs = intPart + 1;
+  } else {
+    roundedAbs = intPart;
+  }
+  
+  return result >= 0 ? roundedAbs / factor : -roundedAbs / factor;
 };
 
 export const ROUNDDOWN = (number: number, num_digits: number): number => {
+  // 靠近零值，向下（绝对值减小的方向）舍入，即向零方向舍入
   const factor = Math.pow(10, num_digits);
-  return Math.floor(number * factor) / factor;
+  const result = number * factor;
+  // 正数向小取整，负数向大取整（向零方向）
+  const rounded = number >= 0 ? Math.floor(result) : Math.ceil(result);
+  return rounded / factor;
 };
 
 export const ROUNDUP = (number: number, num_digits: number): number => {
+  // 远离零值，向上（绝对值增大的方向）舍入
   const factor = Math.pow(10, num_digits);
-  return Math.ceil(number * factor) / factor;
+  const result = number * factor;
+  // 正数向上取整，负数向下取整（远离零方向）
+  const rounded = number >= 0 ? Math.ceil(result) : Math.floor(result);
+  return rounded / factor;
 };
 
 export const SIGN = (number: number): number => {
@@ -147,15 +196,133 @@ export const TRUNC = (number: number, num_digits: number = 0): number => {
 // 文本函数实现
 export const CHAR = (number: number): string => {
   if (number < 1 || number > 65535) {
-    throw new Error('CHAR: number value must be between 1 and 65535');
+    throw new Error('CHAR: 指定字符的数字，介于 1 和 65535 之间（包括 1 和 65535）');
   }
   return String.fromCharCode(number);
 };
 
-// 简化实现人民币大写，完整实现需要更复杂的逻辑
+// 实现人民币大写，完整实现需要更复杂的逻辑
 export const CNMONEY = (number: number, unit?: string): string => {
-  // 简化实现，仅返回数字字符串
-  return number.toFixed(2) + ' 人民币';
+  // 数字转换为人民币大写
+  const num = Math.abs(number);
+  const isNegative = number < 0;
+  
+  // 中文数字
+  const cnNumbers = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+  // 中文单位
+  const cnUnits = ['', '拾', '佰', '仟'];
+  // 整数部分单位
+  const intUnits = ['', '万', '亿', '万亿'];
+  
+  // 处理单位倍数
+  let multiplier = 1;
+  if (unit) {
+    switch (unit) {
+      case 's': multiplier = 10; break;
+      case 'b': multiplier = 100; break;
+      case 'q': multiplier = 1000; break;
+      case 'w': multiplier = 10000; break;
+      case 'sw': multiplier = 100000; break;
+      case 'bw': multiplier = 1000000; break;
+      case 'qw': multiplier = 10000000; break;
+      case 'y': multiplier = 100000000; break;
+      case 'sy': multiplier = 1000000000; break;
+      case 'by': multiplier = 10000000000; break;
+      case 'qy': multiplier = 100000000000; break;
+      case 'wy': multiplier = 1000000000000; break;
+      case 'swy': multiplier = 10000000000000; break;
+      case 'bwy': multiplier = 100000000000000; break;
+      case 'qwy': multiplier = 1000000000000000; break;
+    }
+  }
+  
+  const adjustedNum = num * multiplier;
+  
+  // 分离整数和小数
+  const parts = adjustedNum.toFixed(2).split('.');
+  let intPart = parseInt(parts[0], 10);
+  const decimalPart = parts[1];
+  
+  // 转换整数部分
+  let result = '';
+  let unitIndex = 0;
+  let hasNonZeroBefore = false; // 记录前面是否有非零数字
+  
+  if (intPart === 0) {
+    result = '';
+  } else {
+    const segments: string[] = [];
+    
+    while (intPart > 0) {
+      let segment = intPart % 10000;
+      let segmentStr = '';
+      let digitIndex = 0;
+      let segmentHasNonZero = false;
+      
+      while (segment > 0) {
+        const digit = segment % 10;
+        if (digit === 0) {
+          if (segmentHasNonZero) {
+            // 如果这个段之前有非零数字，现在遇到零，只加一个零
+            segmentStr = '零' + segmentStr;
+            segmentHasNonZero = false;
+          }
+        } else {
+          segmentStr = cnNumbers[digit] + cnUnits[digitIndex] + segmentStr;
+          segmentHasNonZero = true;
+        }
+        digitIndex++;
+        segment = Math.floor(segment / 10);
+      }
+      
+      // 去掉段末尾的零
+      if (segmentStr.endsWith('零')) {
+        segmentStr = segmentStr.slice(0, -1);
+      }
+      
+      if (segmentStr) {
+        segments.push(segmentStr + (unitIndex > 0 ? intUnits[unitIndex] : ''));
+      }
+      
+      intPart = Math.floor(intPart / 10000);
+      unitIndex++;
+    }
+    
+    // 合并各段，去除相邻的重复零
+    result = segments.reverse().join('');
+    // 去除连续的"零零"
+    result = result.replace(/零+/g, '零');
+    // 去除末尾的零
+    if (result.endsWith('零')) {
+      result = result.slice(0, -1);
+    }
+  }
+  
+  // 转换小数部分
+  const jiao = parseInt(decimalPart[0], 10);
+  const fen = parseInt(decimalPart[1], 10);
+  
+  if (result === '' && jiao === 0 && fen === 0) {
+    return '零';
+  }
+  
+  if (jiao === 0 && fen === 0) {
+    result += '圓整';
+  } else {
+    result += '圓';
+    if (jiao > 0) {
+      result += cnNumbers[jiao] + '角';
+    }
+    if (fen > 0) {
+      result += cnNumbers[fen] + '分';
+    }
+  }
+  
+  if (isNegative) {
+    result = '负' + result;
+  }
+  
+  return result;
 };
 
 export const CODE = (text: string): number => {
@@ -178,14 +345,198 @@ export const ENDWITH = (text1: string, text2: string): boolean => {
   return text1.endsWith(text2);
 };
 
-// 简化实现英文金额，完整实现需要更复杂的逻辑
+// 实现数字转换成英文金额文本（待验证优化）
 export const ENMONEY = (number: number): string => {
-  return number.toFixed(2) + ' Dollars';
+  // 检查范围限制：超过千万亿不支持
+  if (Math.abs(number) > 1000000000000000) {
+    throw new Error('ENMONEY: 数字超过千万亿，不支持使用该函数。');
+  }
+  
+  // 将数字转换为英文金额
+  const num = Math.abs(number);
+  const isNegative = number < 0;
+  
+  // 0-19 的英文单词
+  const below20 = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 
+                   'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 
+                   'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  // 20, 30, ... 90 的英文单词
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  // 大数单位
+  const units = ['', 'Thousand', 'Million', 'Billion', 'Trillion', 'Quadrillion'];
+  
+  // 转换小于1000的数字
+  const convertBelow1000 = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 20) return below20[n];
+    if (n < 100) {
+      return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + below20[n % 10] : '');
+    }
+    return below20[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertBelow1000(n % 100) : '');
+  };
+  
+  // 分离整数和小数
+  const parts = num.toFixed(2).split('.');
+  const intPart = parseInt(parts[0], 10);
+  const decimalPart = parseInt(parts[1], 10);
+  
+  // 转换整数部分
+  let result = '';
+  let tempNum = intPart;
+  let unitIndex = 0;
+  let foundNonZero = false;
+  let maxUnitIndex = 0;
+  
+  while (tempNum > 0) {
+    if (tempNum % 1000 !== 0) {
+      maxUnitIndex = unitIndex;
+    }
+    tempNum = Math.floor(tempNum / 1000);
+    unitIndex++;
+  }
+  
+  if (intPart > 0) {
+    maxUnitIndex = unitIndex - 1;
+  }
+  
+  tempNum = intPart;
+  unitIndex = 0;
+  foundNonZero = false;
+  
+  while (unitIndex <= maxUnitIndex) {
+    const segment = tempNum > 0 ? tempNum % 1000 : 0;
+    
+    if (segment !== 0) {
+      const segStr = convertBelow1000(segment);
+      result += segStr + (units[unitIndex] ? ' ' + units[unitIndex] : '') + ' ';
+      foundNonZero = true;
+    } else if (foundNonZero && unitIndex > 0) {
+      result += 'Zero ' + (units[unitIndex] || '') + ' ';
+    }
+    
+    if (tempNum > 0) {
+      tempNum = Math.floor(tempNum / 1000);
+    }
+    unitIndex++;
+  }
+  
+  result = result.trim();
+  
+  if (result === '') {
+    result = 'Zero';
+  }
+  
+  // 转换小数部分（cents）
+  const centsText = convertBelow1000(decimalPart);
+  
+  if (centsText) {
+    result += ' And Cents ' + centsText;
+  }
+  
+  if (isNegative) {
+    result = 'Negative ' + result;
+  }
+  
+  return result;
 };
 
-// 简化实现英文数字，完整实现需要更复杂的逻辑
+// 实现数字转换成英文数字文本（待验证优化）
 export const ENNUMBER = (number: number): string => {
-  return number.toString();
+  // 检查范围限制：超过千万亿不支持
+  if (Math.abs(number) > 1000000000000000) {
+    throw new Error('ENNUMBER: 数字超过千万亿，不支持使用该函数。');
+  }
+  // 将数字转换为英文文本
+  const num = Math.abs(number);
+  const isNegative = number < 0;
+  
+  // 0-19 的英文单词
+  const below20 = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 
+                   'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 
+                   'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  // 20, 30, ... 90 的英文单词
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  // 大数单位
+  const units = ['', 'Thousand', 'Million', 'Billion', 'Trillion', 'Quadrillion'];
+  
+  // 转换小于1000的数字
+  const convertBelow1000 = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 20) return below20[n];
+    if (n < 100) {
+      return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + below20[n % 10] : '');
+    }
+    return below20[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertBelow1000(n % 100) : '');
+  };
+  
+  // 分离整数和小数
+  const parts = num.toString().split('.');
+  const intPart = parseInt(parts[0], 10);
+  const decimalPart = parts[1] || '';
+  
+  // 转换整数部分
+  let result = '';
+  let tempNum = intPart;
+  let unitIndex = 0;
+  let foundNonZero = false;
+  let maxUnitIndex = 0;
+  
+  while (tempNum > 0) {
+    if (tempNum % 1000 !== 0) {
+      maxUnitIndex = unitIndex;
+    }
+    tempNum = Math.floor(tempNum / 1000);
+    unitIndex++;
+  }
+  
+  if (intPart > 0) {
+    maxUnitIndex = unitIndex - 1;
+  }
+  
+  tempNum = intPart;
+  unitIndex = 0;
+  foundNonZero = false;
+  
+  while (unitIndex <= maxUnitIndex) {
+    const segment = tempNum > 0 ? tempNum % 1000 : 0;
+    
+    if (segment !== 0) {
+      const segStr = convertBelow1000(segment);
+      result += segStr + (units[unitIndex] ? ' ' + units[unitIndex] : '') + ' ';
+      foundNonZero = true;
+    } else if (foundNonZero && unitIndex > 0) {
+      result += 'Zero ' + (units[unitIndex] || '') + ' ';
+    }
+    
+    if (tempNum > 0) {
+      tempNum = Math.floor(tempNum / 1000);
+    }
+    unitIndex++;
+  }
+  
+  result = result.trim();
+  
+  if (result === '') {
+    result = 'Zero';
+  }
+  
+  // 转换小数部分 - 每个数字单独输出
+  if (decimalPart) {
+    result += ' Point';
+    for (const digit of decimalPart) {
+      if (digit !== '0') {
+        result += ' ' + below20[parseInt(digit, 10)];
+      } else {
+        result += ' Zero';
+      }
+    }
+  }
+  
+  if (isNegative) {
+    result = 'Negative ' + result;
+  }
+  
+  return result;
 };
 
 export const EXACT = (text1: string, text2: string): boolean => {
@@ -197,18 +548,63 @@ export const FIND = (find_text: string, within_text: string, start_num: number =
   return index >= 0 ? index + 1 : 0;
 };
 
-// 简化实现格式化，完整实现需要更复杂的逻辑
+// 简化实现格式化，完整实现需要更复杂的逻辑（待验证优化）
 export const FORMAT = (text: any, format: string): string => {
-  return text.toString();
+  const num = typeof text === 'number' ? text : parseFloat(text);
+  
+  if (isNaN(num)) {
+    return String(text);
+  }
+  
+  // 百分比格式
+  if (format.includes('%')) {
+    const percentMatch = format.match(/0\.0+/g)?.[0];
+    const decimalPlaces = percentMatch ? percentMatch.length - 1 : 0;
+    const multiplied = num * 100;
+    return multiplied.toFixed(decimalPlaces) + '%';
+  }
+  
+  // 科学计数法格式
+  if (format.toUpperCase().includes('E')) {
+    const match = format.match(/0\.?0*E0?0*/i);
+    if (match) {
+      return num.toString().toUpperCase();
+    }
+    return num.toExponential().toUpperCase();
+  }
+  
+  // 千分位货币格式
+  let decimalPlaces = 0;
+  const decimalMatch = format.match(/\.(0+)/);
+  if (decimalMatch) {
+    decimalPlaces = decimalMatch[1].length;
+  }
+  
+  // 判断是否有货币符号
+  let prefix = '';
+  if (format.includes('￥')) {
+    prefix = '￥';
+  } else if (format.includes('$')) {
+    prefix = '$';
+  }
+  
+  // 格式化数字
+  const parts = num.toFixed(decimalPlaces).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  
+  return prefix + parts.join('.');
 };
 
 export const GETCHARNUM = (text1: string, text2: string): number => {
+  if (!text2 || !text1) return 0;
+  
   let count = 0;
   let index = text1.indexOf(text2);
   while (index !== -1) {
     count++;
     index = text1.indexOf(text2, index + text2.length);
   }
+
   return count;
 };
 
@@ -235,7 +631,7 @@ export const MID = (text: string, start_num: number, num_chars: number): string 
   return text.slice(start, start + num_chars);
 };
 
-// 简化实现MIDCHAR，完整实现需要更复杂的逻辑
+// 简化实现MIDCHAR，完整实现需要更复杂的逻辑（待验证优化）
 export const MIDCHAR = (text: string, char: string, number: number = 1, direction: boolean = true): string => {
   const indices: number[] = [];
   let index = text.indexOf(char);
@@ -260,60 +656,160 @@ export const MIDCHAR = (text: string, char: string, number: number = 1, directio
   }
 };
 
-// 简化实现NUMTO，完整实现需要更复杂的逻辑
+// 简化实现NUMTO，完整实现需要更复杂的逻辑（待验证优化）
 export const NUMTO = (number: number): string => {
   return number.toString();
 };
 
-// 简化实现NUMTOZH，完整实现需要更复杂的逻辑
+// 简化实现NUMTOZH，完整实现需要更复杂的逻辑（待验证优化）
 export const NUMTOZH = (number: number | string, type: number = 1): string => {
   return number.toString();
 };
 
 export const PROPER = (text: string): string => {
-  return text.split(' ').map(word => {
-    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-  }).join(' ');
-};
-
-export const REGEXP = (text: string, pattern: string, intNumber?: number): boolean => {
-  let flags = '';
-  if (intNumber === 2 || intNumber === 66) { // CASE_INSENSITIVE or CASE_INSENSITIVE + UNICODE_CASE
-    flags += 'i';
-  }
-  if (intNumber === 8) { // MULTILINE
-    flags += 'm';
-  }
-  if (intNumber === 32) { // DOTALL
-    flags += 's';
+  if (!text || text.length === 0) {
+    return '';
   }
   
-  const regex = new RegExp(pattern, flags);
-  return regex.test(text);
+  let result = '';
+  let capitalizeNext = true;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    if (/[a-zA-Z]/.test(char)) {
+      // 如果是字母
+      if (capitalizeNext) {
+        result += char.toUpperCase();
+        capitalizeNext = false;
+      } else {
+        result += char.toLowerCase();
+      }
+    } else {
+      // 非字母字符后，下一个字母需要大写
+      result += char;
+      capitalizeNext = true;
+    }
+  }
+  
+  return result;
 };
 
+// 正则表达式标志位常量 （待验证优化）
+export const REGEXP = (
+  text: string,
+  pattern: string,
+  intNumber?: number
+): boolean => {
+  if (!text || pattern === undefined || pattern === null) {
+    return false;
+  }
+  // 标志位常量
+  const UNIX_LINES = 1;           // 启用Unix行模式
+  const CASE_INSENSITIVE = 2;     // 启用不区分大小写的匹配
+  const COMMENTS = 4;             // 允许在模式中使用空格和注释
+  const MULTILINE = 8;            // 启用多行模式
+  const LITERAL = 16;             // 启用模式的文字分析
+  const DOTALL = 32;              // 启用DOTALL模式
+  const UNICODE_CASE = 64;        // 启用支持Unicode的大小写折叠
+  const CANON_EQ = 128;           // 启用规范等效
+  const UNICODE_CHAR_CLASS = 256; // 启用预定义字符类和POSIX字符类的Unicode版本
+  let flags = '';
+  // 处理标志位组合
+  if (intNumber !== undefined && intNumber !== null) {
+    // CASE_INSENSITIVE = 2
+    if ((intNumber & CASE_INSENSITIVE) === CASE_INSENSITIVE) {
+      flags += 'i';
+    }
+    // MULTILINE = 8
+    if ((intNumber & MULTILINE) === MULTILINE) {
+      flags += 'm';
+    }
+    // DOTALL = 32
+    if ((intNumber & DOTALL) === DOTALL) {
+      flags += 's';
+    }
+    // UNICODE_CASE = 64
+    if ((intNumber & UNICODE_CASE) === UNICODE_CASE) {
+      flags += 'u';
+    }
+  }
+  let regex: RegExp;
+  try {
+    // LITERAL = 16: 启用模式的文字分析（转义正则元字符）
+    if (intNumber !== undefined && (intNumber & LITERAL) === LITERAL) {
+      // 转义所有正则元字符
+      const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      regex = new RegExp(escapedPattern, flags);
+    } else {
+      regex = new RegExp(pattern, flags);
+    }
+  } catch (e) {
+    throw new Error(`REGEXP: 正则表达式语法错误 - ${(e as Error).message}`);
+  }
+  return regex.test(text);
+}
+
 export const REPEAT = (text: string, number_times: number = 1): string => {
+   // 如果 text 为空或 null，返回空字符串
+  if (!text) {
+    return '';
+  }
+
+  // 如果不是整数，将被取整
   const count = Math.floor(number_times);
-  if (count < 0) {
+  if (count <= 0) {
     return '';
   }
   const result = text.repeat(count);
+  // 若超过 32767 个字符，则显示错误信息
   return result.length > 32767 ? 'Too Long Text For Excel Cell' : result;
 };
 
+// 文本替换
 export const REPLACE = (...args: any[]): string => {
-  if (args.length === 3) {
-    // 替换所有符合条件的文本
-    const [text, texttoreplace, replacetext] = args;
-    return text.split(texttoreplace).join(replacetext);
-  } else if (args.length === 4) {
-    // 替换指定位置的文本
-    const [old_text, start_num, num_chars, new_text] = args;
-    const start = Math.max(0, start_num - 1);
-    const end = start + num_chars;
-    return old_text.slice(0, start) + new_text + old_text.slice(end);
+  if (args.length < 3 || args.length > 4) {
+    throw new Error('REPLACE: 参数数量不正确，需要 3 或 4 个参数。');
   }
-  return args[0];
+
+  if (args.length === 3) {
+    // 用法一：替换所有符合条件的文本
+    const [text, texttoreplace, replacetext] = args;
+    
+    if (text === undefined || text === null) {
+      return '';
+    }
+    if (texttoreplace === undefined || texttoreplace === null) {
+      return String(text);
+    }
+    
+    // 使用 split + join 替换所有匹配的文本
+    return String(text).split(String(texttoreplace)).join(replacetext !== null && replacetext !== undefined ? String(replacetext) : '');
+    
+  } else {
+    // 用法二：替换指定位置的文本
+    const [old_text, start_num, num_chars, new_text] = args;
+    
+    if (old_text === undefined || old_text === null) {
+      return '';
+    }
+    
+    const text = String(old_text);
+    const start = Math.max(1, Math.floor(start_num));  // 起始位置从1开始
+    const num = Math.max(0, Math.floor(num_chars));   // 替换长度
+    const replacement = new_text !== null && new_text !== undefined ? String(new_text) : '';
+    
+    // 如果起始位置超过文本长度，直接返回原文本
+    if (start > text.length) {
+      return text + replacement;
+    }
+    
+    // 计算实际的结束位置
+    const startIndex = start - 1;  // 转换为0-based索引
+    const endIndex = Math.min(startIndex + num, text.length);
+    
+    return text.slice(0, startIndex) + replacement + text.slice(endIndex);
+  }
 };
 
 export const RIGHT = (text: string, num_chars: number = 1): string => {
@@ -343,20 +839,54 @@ export const SUBSTITUTE = (text: string, old_text: string, new_text: string, ins
 };
 
 export const TEXTGETNUM = (text: string): string => {
-  const numbers = text.match(/\d/g);
+  const numbers = text ? text.match(/\d/g) : [];
   return numbers ? numbers.join('') : '';
 };
 
 export const TODOUBLE = (text: string): number => {
+  if (!text) {
+    return 0;
+  }
   return parseFloat(text);
 };
 
 export const TOINTEGER = (text: string): number => {
+  if (!text) {
+    return 0;
+  }
   return parseInt(text, 10);
 };
 
+// 待验证优化
 export const TOLONG = (text: string): number => {
-  return parseInt(text, 10);
+  // Long 范围：-9223372036854775808 ~ 9223372036854775807
+  const MIN_LONG = -9223372036854775808;
+  const MAX_LONG = 9223372036854775807;
+  
+  if (!text) {
+    return 0;
+  }
+  
+  // 处理字符串，提取整数部分
+  const numStr = String(text).trim();
+  
+  // 尝试解析为数字
+  let num = parseFloat(numStr);
+  
+  // 如果解析失败，抛出错误
+  if (isNaN(num)) {
+    throw new Error('TOLONG: 无法将文本转换为Long类型。');
+  }
+  
+  // 取整（向下取整，与 Java 的 Long.parseLong() 一致）
+  num = Math.floor(num);
+  
+  // 检查是否在 Long 范围内
+  if (num < MIN_LONG || num > MAX_LONG) {
+    throw new Error(`TOLONG: 数值超出Long范围（${MIN_LONG} ~ ${MAX_LONG}）。`);
+  }
+  
+  return num;
 };
 
 export const TRIM = (text: string): string => {
