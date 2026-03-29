@@ -898,13 +898,38 @@ export const UPPER = (text: string): string => {
 };
 
 // 日期函数实现
+
+// 辅助函数：格式化日期为 YYYY-MM-DD（使用本地时区）
+const formatDate = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// 辅助函数：格式化日期时间为 YYYY-MM-DD HH:mm:ss（使用本地时区）
+const formatDateTime = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 export const DATEDELTA = (date: string, delta: number): string => {
   const d = new Date(date);
   d.setDate(d.getDate() + delta);
-  return d.toISOString().split('T')[0];
+  return formatDate(d);
 };
 
 // 简化实现DATEDIF，完整实现需要更复杂的逻辑
+// ⚠️ 当前实现为简化版本，存在以下限制：
+
+// 年月计算简化：Y 和 M 单位使用 365 和 30 作为除数，可能与实际日历有偏差
+// MD/YM/YD 计算：当前实现与 Excel 标准行为可能不完全一致
+// 建议优化：如需精确计算，建议使用专业的日期处理库（如 dayjs 或 date-fns）
 export const DATEDIF = (start_date: string, end_date: string, unit: string, method?: number): number => {
   const start = new Date(start_date);
   const end = new Date(end_date);
@@ -934,56 +959,112 @@ export const DATEDIF = (start_date: string, end_date: string, unit: string, meth
       return Math.abs(end.getMonth() - start.getMonth());
     case 'YD':
       return Math.abs((new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime() - 
-                      new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()) / 
+                      new Date(end.getFullYear(), start.getMonth(), start.getDate()).getTime()) / 
                      (1000 * 60 * 60 * 24));
     default:
       return 0;
   }
 };
 
-// 简化实现DATEINMONTH，完整实现需要更复杂的逻辑
 export const DATEINMONTH = (date: string, number: number): string => {
   const d = new Date(date);
   d.setDate(number);
-  return d.toISOString().split('T')[0];
+  return formatDate(d);
 };
 
-// 简化实现DATEINQUARTER，完整实现需要更复杂的逻辑
-export const DATEINQUARTER = (date: string, number: number): string => {
+export const DATEINQUARTER = (
+  date: string, 
+  number: number, 
+  strict: boolean = false  // true: 超出范围报错，false: 自动顺延
+): string => {
   const d = new Date(date);
-  d.setDate(d.getDate() + number - 1);
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  
+  const quarterStartMonth = Math.floor(month / 3) * 3;
+  const quarterStart = new Date(year, quarterStartMonth, 1);
+  quarterStart.setDate(quarterStart.getDate() + number);
+  
+  if (strict) {
+    const quarterEnd = new Date(year, quarterStartMonth + 3, 0);
+    if (quarterStart > quarterEnd) {
+      throw new Error(`DATEINQUARTER: number(${number}) 超出季度有效天数范围`);
+    }
+  }
+  
+  return formatDate(quarterStart);
 };
 
-// 简化实现DATEINWEEK，完整实现需要更复杂的逻辑
 export const DATEINWEEK = (date: string, number: number): string => {
   const d = new Date(date);
-  d.setDate(d.getDate() + number - 1);
-  return d.toISOString().split('T')[0];
+  const dayOfWeek = d.getDay(); // 0=周日，1-6=周一到周六
+  
+  // 计算当前是周内第几天（周一=1，周日=0转为7）
+  const currentDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+  
+  // 计算目标日期
+  const result = new Date(d);
+  if (number <= 7) {
+    // 周内第number天
+    const offset = number - currentDay;
+    result.setDate(d.getDate() + offset);
+  } else {
+    // 超出7天，顺延到下一周
+    const offset = number - currentDay;
+    result.setDate(d.getDate() + offset);
+  }
+  
+  const year = result.getFullYear();
+  const month = String(result.getMonth() + 1).padStart(2, '0');
+  const day = String(result.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
-// 简化实现DATEINYEAR，完整实现需要更复杂的逻辑
+/**
+ * DATEINYEAR(date, number)：函数返回在某一个年当中第几天的日期。
+ * date：日期
+ * number：指定天数（如果超出当年天数，顺延到下一年）
+ */
 export const DATEINYEAR = (date: string, number: number): string => {
   const d = new Date(date);
-  d.setDate(1);
-  d.setDate(number);
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  
+  // 找到该年的1月1日
+  const firstDay = new Date(year, 0, 1);
+  
+  // 加上 number - 1 天（第1天就是1月1日）
+  firstDay.setDate(1 + number - 1);
+  
+  const resultYear = firstDay.getFullYear();
+  const month = String(firstDay.getMonth() + 1).padStart(2, '0');
+  const day = String(firstDay.getDate()).padStart(2, '0');
+  return `${resultYear}-${month}-${day}`;
 };
 
 // 简化实现DATESUBDATE，完整实现需要更复杂的逻辑
+/**
+ * DATESUBDATE(startDateTime, endDateTime, unit, [method])：返回两个日期之间的时间差。
+ * startDateTime：开始时间
+ * endDateTime：结束时间
+ * unit：时间差单位
+ * method：（可选、默认返回绝对值），若填写-1、则会考虑正负情况。
+ */
 export const DATESUBDATE = (startDateTime: string, endDateTime: string, unit: string, method?: number): number => {
   const start = new Date(startDateTime);
   const end = new Date(endDateTime);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new Error('Invalid date format');
+  }
+  
   let diff = end.getTime() - start.getTime();
   
-  if (method === -1) {
-    // 考虑正负情况
-  } else {
-    // 返回绝对值
+  // method 不为 -1 时返回绝对值
+  if (method !== -1) {
     diff = Math.abs(diff);
   }
   
-  switch (unit) {
+  switch (unit.toLowerCase()) {
     case 's':
       return Math.floor(diff / 1000);
     case 'm':
@@ -995,14 +1076,52 @@ export const DATESUBDATE = (startDateTime: string, endDateTime: string, unit: st
     case 'w':
       return Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
     default:
-      return 0;
+      throw new Error(`Unsupported unit: ${unit}. Use s, m, h, d, or w.`);
   }
 };
 
-// 简化实现DATE_FORMAT，完整实现需要更复杂的逻辑
+/**
+ * DATE_FORMAT(datetime, formatTo)：日期时间格式化函数。
+ * datetime：日期时间
+ * formatTo：目标格式化样式
+ * 
+ * 支持格式：
+ * yyyy - 4位年份
+ * yy - 2位年份
+ * MM - 2位月份
+ * dd - 2位日期
+ * HH - 24小时制（00-23）
+ * hh - 12小时制（01-12）
+ * mm - 分钟
+ * ss - 秒
+ * SSS - 毫秒
+ */
 export const DATE_FORMAT = (datetime: string, formatTo: string): string => {
   const date = new Date(datetime);
-  return date.toLocaleString();
+  
+  if (isNaN(date.getTime())) {
+    throw new Error('Invalid datetime format');
+  }
+  
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours24 = date.getHours();
+  const hours12 = hours24 % 12 || 12;
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const milliseconds = date.getMilliseconds();
+  
+  return formatTo
+    .replace(/yyyy/g, String(year))
+    .replace(/yy/g, String(year).slice(-2))
+    .replace(/MM/g, String(month).padStart(2, '0'))
+    .replace(/dd/g, String(day).padStart(2, '0'))
+    .replace(/HH/g, String(hours24).padStart(2, '0'))
+    .replace(/hh/g, String(hours12).padStart(2, '0'))
+    .replace(/mm/g, String(minutes).padStart(2, '0'))
+    .replace(/ss/g, String(seconds).padStart(2, '0'))
+    .replace(/SSS/g, String(milliseconds).padStart(3, '0'));
 };
 
 export const DAY = (date: string): number => {
@@ -1022,11 +1141,7 @@ export const DAYSOFYEAR = (year: number): number => {
 export const ENDOFMONTH = (date?: string, number: number = 0): string => {
   const d = date ? new Date(date) : new Date();
   d.setMonth(d.getMonth() + number + 1, 0);
-  return d.toISOString().split('T')[0];
-};
-
-export const HOUR = (time: string): number => {
-  return new Date('2000-01-01 ' + time).getHours();
+  return formatDate(d);
 };
 
 // 简化实现ISWORKDAY，完整实现需要更复杂的逻辑
@@ -1036,42 +1151,68 @@ export const ISWORKDAY = (date?: string): boolean => {
   return day !== 0 && day !== 6;
 };
 
+/**
+ * getFormatDate(time)：返回时间中的日期对象。
+ * time：时间
+ * 
+ * 示例：
+ * getFormatDate("16:40:19")
+ * getFormatDate("2023-12-13 16:40:19")
+ */
+const getFormatDate = (time: string): Date => {
+  let date: Date;
+  if (time.includes(' ') || time.includes('T')) {
+    // 完整日期时间格式
+    date = new Date(time);
+  } else {
+    // 仅时间格式
+    date = new Date('2000-01-01 ' + time);
+  }
+  
+  if (isNaN(date.getTime())) {
+    throw new Error('非法的时间格式，请确保时间格式为HH:mm:ss或YYYY-MM-DD HH:mm:ss.');
+  }
+
+  return date;
+};
+export const HOUR = (time: string): number => {
+  return getFormatDate(time).getHours();
+};
+
 export const MINUTE = (time: string): number => {
-  return new Date('2000-01-01 ' + time).getMinutes();
+  return getFormatDate(time).getMinutes();
+};
+
+export const SECOND = (time: string): number => {
+  return getFormatDate(time).getSeconds();
 };
 
 export const MONTH = (date: string): number => {
   return new Date(date).getMonth() + 1;
 };
 
-// 简化实现MONTHDELTA，完整实现需要更复杂的逻辑
 export const MONTHDELTA = (date: string, delta: number): string => {
   const d = new Date(date);
   d.setMonth(d.getMonth() + delta);
-  return d.toISOString().split('T')[0];
+  return formatDate(d);
 };
 
 export const NOW = (): string => {
-  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  return formatDateTime(new Date());
 };
 
 export const QUARTER = (date: string): number => {
   return Math.floor((new Date(date).getMonth() + 3) / 3);
 };
 
-export const SECOND = (time: string): number => {
-  return new Date('2000-01-01 ' + time).getSeconds();
-};
-
-// 简化实现TIME，完整实现需要更复杂的逻辑
 export const TIME = (hour: number, minute: number, second: number): string => {
   const d = new Date();
   d.setHours(hour, minute, second);
-  return d.toISOString().slice(0, 19).replace('T', ' ');
+  return formatDateTime(d);
 };
 
 export const TODAY = (): string => {
-  return new Date().toISOString().split('T')[0];
+  return formatDate(new Date());
 };
 
 // 简化实现WEEK，完整实现需要更复杂的逻辑
@@ -1089,7 +1230,7 @@ export const WEEKDATE = (year: number, month: number, weekOfMonth: number, dayOf
   const dayDiff = dayOfWeek - firstDay;
   const date = (weekOfMonth - 1) * 7 + (dayDiff <= 0 ? dayDiff + 7 : dayDiff) + 1;
   d.setDate(date);
-  return d.toISOString().split('T')[0];
+  return formatDate(d);
 };
 
 // 简化实现WEEKDAY，完整实现需要更复杂的逻辑
@@ -1104,11 +1245,10 @@ export const YEAR = (date: string): number => {
   return new Date(date).getFullYear();
 };
 
-// 简化实现YEARDELTA，完整实现需要更复杂的逻辑
 export const YEARDELTA = (date: string, delta: number): string => {
   const d = new Date(date);
   d.setFullYear(d.getFullYear() + delta);
-  return d.toISOString().split('T')[0];
+  return formatDate(d);
 };
 
 // 统计函数实现
@@ -1203,49 +1343,81 @@ export const FV = (rate: number, nper: number, pmt: number, pv: number = 0, type
   return -fv;
 };
 
-// 简化实现IPMT，完整实现需要更复杂的逻辑
-export const IPMT = (rate: number, per: number, nper: number, pv: number, fv: number = 0, type: number = 0): number => {
+// 简化实现IPMT，（待验证优化）
+export const IPMT = (
+  rate: number, 
+  per: number, 
+  nper: number, 
+  pv: number, 
+  fv: number = 0, 
+  type: number = 0
+): number => {
+  // 参数验证
+  if (per < 1 || per > nper) {
+    throw new Error('IPMT: per 必须在 1 到 nper 范围内');
+  }
+  
   if (rate === 0) {
+    // 利率为 0 时，利息为 0
     return 0;
   }
   
-  const pmt = -((fv + pv * Math.pow(1 + rate, nper)) / 
-               (((1 + rate * type) * (Math.pow(1 + rate, nper) - 1)) / rate + type));
+  // 计算每期付款额 (PMT)
+  // PMT = rate * (pv * (1+rate)^nper + fv) / ((1 + rate*type) * ((1+rate)^nper - 1))
+  const powRateNper = Math.pow(1 + rate, nper);
+  const pmt = rate * (pv * powRateNper + fv) / ((1 + rate * type) * (powRateNper - 1));
   
-  const ipmt = -((pv * Math.pow(1 + rate, per - 1) * rate) - 
-                (pmt * (1 + rate * type) * (Math.pow(1 + rate, per - 1) - 1) / rate));
+  // 计算指定期间的利息部分
+  // IPMT = -(pv * (1+rate)^(per-1) + pmt * ((1+rate)^(per-1)-1)/rate * (1+rate*type)) * rate
+  const powRatePer = Math.pow(1 + rate, per - 1);
+  const ipmt = -(pv * powRatePer + pmt * (powRatePer - 1) / rate * (1 + rate * type)) * rate;
   
-  return ipmt;
+  // 保留两位小数，与 Excel 保持一致
+  return Math.round(ipmt * 100) / 100;
 };
 
-// 简化实现NPER，完整实现需要更复杂的逻辑
-export const NPER = (rate: number, pmt: number, pv: number, fv: number = 0, type: number = 0): number => {
+export const NPER = (
+  rate: number, 
+  pmt: number, 
+  pv: number, 
+  fv: number = 0, 
+  type: number = 0
+): number => {
+  // 参数验证
+  if (pmt === 0 && pv === 0) {
+    throw new Error('NPER: pmt 和 pv 不能同时为 0');
+  }
+  
+  if (rate <= -1) {
+    throw new Error('NPER: rate 必须大于 -1');
+  }
+  
+  // 利率为 0 时的特殊情况
   if (rate === 0) {
+    if (pmt === 0) {
+      throw new Error('NPER: rate 为 0 时，pmt 不能为 0');
+    }
     return -(pv + fv) / pmt;
   }
   
-  let nper = 0;
-  let guess = 10;
-  const maxIter = 100;
-  const tolerance = 1e-8;
+  // 标准 NPER 公式
+  // nper = log((pmt * (1 + rate * type) - fv * rate) / (pmt * (1 + rate * type) + pv * rate)) / log(1 + rate)
+  const pmtRateType = pmt * (1 + rate * type);
+  const numerator = pmtRateType - fv * rate;
+  const denominator = pmtRateType + pv * rate;
   
-  for (let i = 0; i < maxIter; i++) {
-    const f = -pv * Math.pow(1 + rate, guess) - 
-              pmt * (1 + rate * type) * (Math.pow(1 + rate, guess) - 1) / rate + fv;
-    
-    if (Math.abs(f) < tolerance) {
-      break;
-    }
-    
-    const df = -pv * Math.log(1 + rate) * Math.pow(1 + rate, guess) - 
-               pmt * (1 + rate * type) * (Math.log(1 + rate) * Math.pow(1 + rate, guess) * rate - 
-               (Math.pow(1 + rate, guess) - 1)) / rate;
-    
-    guess -= f / df;
-    nper = guess;
+  if (denominator === 0) {
+    throw new Error('NPER: 计算无效，分母为 0');
   }
   
-  return nper;
+  if (numerator / denominator <= 0) {
+    throw new Error('NPER: 无法计算期数，参数组合无效');
+  }
+  
+  const nper = Math.log(numerator / denominator) / Math.log(1 + rate);
+  
+  // 保留 5 位小数，与 Excel 保持一致
+  return Math.round(nper * 100000) / 100000;
 };
 
 export const NPV = (rate: number, ...values: number[]): number => {
@@ -1253,7 +1425,8 @@ export const NPV = (rate: number, ...values: number[]): number => {
   for (let i = 0; i < values.length; i++) {
     npv += values[i] / Math.pow(1 + rate, i + 1);
   }
-  return npv;
+  // 保留 2 位小数
+  return Math.round(npv * 100) / 100;
 };
 
 export const PMT = (rate: number, nper: number, pv: number, fv: number = 0, type: number = 0): number => {
@@ -1267,15 +1440,41 @@ export const PMT = (rate: number, nper: number, pv: number, fv: number = 0, type
   return -pmt;
 };
 
-export const PPMT = (rate: number, per: number, nper: number, pv: number, fv: number = 0, type: number = 0): number => {
+// 简化实现PPMT，（待验证优化）
+export const PPMT = (
+  rate: number, 
+  per: number, 
+  nper: number, 
+  pv: number, 
+  fv: number = 0, 
+  type: number = 0
+): number => {
+  // 参数验证
+  if (per < 1 || per > nper) {
+    throw new Error('PPMT: per 必须在 1 到 nper 范围内');
+  }
+  
+  if (nper <= 0) {
+    throw new Error('PPMT: nper 必须大于 0');
+  }
+  
+  // 利率为 0 时的特殊情况
   if (rate === 0) {
+    // 零利率时，每期本金 = -(pv + fv) / nper
     return -(pv + fv) / nper;
   }
   
+  // 计算每期付款额 (PMT)
   const pmt = PMT(rate, nper, pv, fv, type);
+  
+  // 计算指定期间的利息部分 (IPMT)
   const ipmt = IPMT(rate, per, nper, pv, fv, type);
   
-  return pmt - ipmt;
+  // 本金 = 总付款 - 利息
+  const ppmt = pmt - ipmt;
+  
+  // 保留两位小数，与 Excel 保持一致
+  return Math.round(ppmt * 100) / 100;
 };
 
 export const PV = (rate: number, nper: number, pmt: number, fv: number = 0, type: number = 0): number => {
@@ -1290,6 +1489,7 @@ export const PV = (rate: number, nper: number, pmt: number, fv: number = 0, type
 };
 
 // 逻辑函数实现
+// 待验证
 export const AND = (...exprs: boolean[]): boolean => {
   return exprs.every(expr => expr === true);
 };
@@ -1298,11 +1498,11 @@ export const BITNOT = (data: number | string): number => {
   const num = typeof data === 'string' ? parseInt(data, 10) : data;
   return ~num;
 };
-
+// 待验证
 export const IF = (boolean: boolean, value1: any, value2: any): any => {
   return boolean ? value1 : value2;
 };
-
+// 待验证
 export const OR = (...exprs: boolean[]): boolean => {
   return exprs.some(expr => expr === true);
 };
@@ -1323,7 +1523,7 @@ export const SWITCH = (expression: any, ...args: any[]): any => {
 // 其他函数实现
 export const CORREL = (array1: number[], array2: number[]): number => {
   if (array1.length !== array2.length) {
-    throw new Error('CORREL: arrays must have the same length');
+    throw new Error('CORREL: 数组长度不一致');
   }
   
   const n = array1.length;
@@ -1343,7 +1543,7 @@ export const CORREL = (array1: number[], array2: number[]): number => {
   return den === 0 ? 0 : num / den;
 };
 
-// 简化实现INDEX，完整实现需要更复杂的逻辑
+// 简化实现INDEX基本测试通过，（待验证优化）
 export const INDEX = (arry: any[], ...indices: number[]): any => {
   if (indices.length === 1) {
     return arry[indices[0] - 1];

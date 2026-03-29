@@ -498,7 +498,7 @@ const functionList = [
   },
   {
     funCategory: "0,1,2",
-    funDescription: "DATEDELTA(date,delta)：返回指定日期后delta日的日期。\r\ndate：指定日期\r\ndelta：为0时，返回指定日期；正整数时，日相加后日期；负整数时，日相减后日期。\r\n\r\n示例：\r\nMONTHDELTA(\"2023-12-12\", 0) -> 2023-12-12\r\nMONTHDELTA(\"2023-12-12\", 10) -> 2023-12-22\r\nMONTHDELTA(\"2023-12-12\", -10) -> 2023-12-02",
+    funDescription: "DATEDELTA(date,delta)：返回指定日期后delta日的日期。\r\ndate：指定日期\r\ndelta：为0时，返回指定日期；正整数时，日相加后日期；负整数时，日相减后日期。\r\n\r\n示例：\r\nDATEDELTA(\"2023-12-12\", 0) -> 2023-12-12\r\nDATEDELTA(\"2023-12-12\", 10) -> 2023-12-22\r\nDATEDELTA(\"2023-12-12\", -10) -> 2023-12-02",
     funName: "DATEDELTA",
     funTypeName: "日期",
     id: "50"
@@ -575,10 +575,17 @@ const functionList = [
   },
   {
     funCategory: "0,1,2",
-    funDescription: "ENDOFMONTH([date],[number])：日期所在月份之前或之后月份的最后一天的日期值\r\ndate：（可选、默认系统当月）指定日期。\r\nnumber：（可选、默认0）指定月份前/后月份的数量，整数；\r\n              缺省或者为0时，默认为date参数当月；\r\n              正整数时，为date之后的月份;\r\n              负整数时为date之前的月份；\r\n\r\n备注：\r\n不支持第一个参数缺省时第二个参数不缺省。\r\n\r\n示例：\r\n若系统当月为2023-12\r\nENDOFMONTH() -> \"2023-12-31\"\r\nENDOFMONTH(\"2023-12-12\") -> \"2023-12-31\"\r\nENDOFMONTH(\"2023-12-12\", 0) -> \"2023-12-31\"\r\nENDOFMONTH(\"2023-12-12\", -1) -> \"2023-11-31\"\r\nENDOFMONTH(\"2023-12-12\", 1) -> \"2024-01-31\"",
+    funDescription: "ENDOFMONTH([date],[number])：日期所在月份之前或之后月份的最后一天的日期值\r\ndate：（可选、默认系统当月）指定日期。\r\nnumber：（可选、默认0）指定月份前/后月份的数量，整数；\r\n              缺省或者为0时，默认为date参数当月；\r\n              正整数时，为date之后的月份;\r\n              负整数时为date之前的月份；\r\n\r\n备注：\r\n不支持第一个参数缺省时第二个参数不缺省。\r\n\r\n示例：\r\n若系统当月为2023-12\r\nENDOFMONTH() -> \"2023-12-31\"\r\nENDOFMONTH(\"2023-12-12\") -> \"2023-12-31\"\r\nENDOFMONTH(\"2023-12-12\", 0) -> \"2023-12-31\"\r\nENDOFMONTH(\"2023-12-12\", -1) -> \"2023-11-30\"\r\nENDOFMONTH(\"2023-12-12\", 1) -> \"2024-01-31\"",
     funName: "ENDOFMONTH",
     funTypeName: "日期",
     id: "61"
+  },
+  {
+    funCategory: "0,1,2",
+    funDescription: "ISWORKDAY([date])：判断某日期是工作日还是周末；工作日返回ture，非工作日返回false；\r\ndate：（可选、默认系统当日）日期。\r\n\r\n备注：\r\n暂时仅支持周末和工作日判断，暂时不支持法定节假日。\r\n\r\n示例：\r\nISWORKDAY(\"2023-01-01\") -> false\r\nISWORKDAY(\"2021-01-01\") -> true",
+    funName: "ISWORKDAY",
+    funTypeName: "日期",
+    id: "63"
   },
   {
     funCategory: "0,1,2",
@@ -589,17 +596,17 @@ const functionList = [
   },
   {
     funCategory: "0,1,2",
-    funDescription: "ISWORKDAY([date])：判断某日期是工作日还是周末；工作日返回ture，非工作日返回false；\r\ndate：（可选、默认系统当日）日期。\r\n\r\n备注：\r\n暂时仅支持周末和工作日判断，暂时不支持法定节假日。\r\n\r\n示例：\r\nISWORKDAY(\"2023-01-01\") -> false\r\nISWORKDAY(\"2021-01-02\") -> true",
-    funName: "ISWORKDAY",
-    funTypeName: "日期",
-    id: "63"
-  },
-  {
-    funCategory: "0,1,2",
     funDescription: "MINUTE(time)：返回时间中的分钟数。\r\ntime：时间。\r\n\r\n示例：\r\nMINUTE(\"16:40:19\") -> 40",
     funName: "MINUTE",
     funTypeName: "日期",
     id: "64"
+  },
+  {
+    funCategory: "0,1,2",
+    funDescription: "SECOND(time)：返回时间中的秒数。\r\ntime：时间。\r\n\r\n示例：\r\nSECOND(\"16:40:19\") -> 19",
+    funName: "SECOND",
+    funTypeName: "日期",
+    id: "69"
   },
   {
     funCategory: "0,1,2",
@@ -628,13 +635,6 @@ const functionList = [
     funName: "QUARTER",
     funTypeName: "日期",
     id: "68"
-  },
-  {
-    funCategory: "0,1,2",
-    funDescription: "SECOND(time)：返回时间中的秒数。\r\ntime：时间。\r\n\r\n示例：\r\nSECOND(\"16:40:19\") -> 19",
-    funName: "SECOND",
-    funTypeName: "日期",
-    id: "69"
   },
   {
     funCategory: "0,1,2",
