@@ -20,7 +20,7 @@ npm install qlexpress-js
 
 ### 基础使用
 
-```javascript
+``` typeScript
 import { ExpressRunner, execute } from 'qlexpress-js';
 
 // 方式一：使用快速执行函数
@@ -35,7 +35,7 @@ console.log(result2); // 输出: 7
 
 ### 变量和上下文
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 传入上下文变量
@@ -55,7 +55,7 @@ console.log(result2.variables); // 输出: { x: 10, y: 30 }
 
 ### 数据类型
 
-```javascript
+``` typeScript
 // 数字
 42
 3.14
@@ -86,7 +86,7 @@ undefined
 
 ### 运算符
 
-```javascript
+``` typeScript
 // 算术运算符
 + - * / % mod
 
@@ -113,7 +113,7 @@ score between 60 and 100
 
 ### 控制流
 
-```javascript
+``` typeScript
 // if 语句
 if (score >= 90) then {
   return "优秀"
@@ -143,7 +143,7 @@ for (i = 0; i < 10; i++) {
 
 ### 函数定义
 
-```javascript
+``` typeScript
 function add(a, b) {
   return a + b;
 }
@@ -160,7 +160,7 @@ return factorial(5); // 输出: 120
 
 ### 数学函数
 
-```javascript
+``` typeScript
 abs(x)       // 绝对值
 ceil(x)      // 向上取整
 floor(x)     // 向下取整
@@ -176,7 +176,7 @@ log10(x)     // 常用对数
 
 ### 聚合函数
 
-```javascript
+``` typeScript
 min(a, b, ...)   // 最小值
 max(a, b, ...)   // 最大值
 sum(a, b, ...)   // 求和
@@ -185,7 +185,7 @@ avg(a, b, ...)   // 平均值
 
 ### 字符串函数
 
-```javascript
+``` typeScript
 strlen(s)           // 字符串长度
 substr(s, start, len)  // 截取子串
 toUpperCase(s)      // 转大写
@@ -200,7 +200,7 @@ endsWith(s, suffix)   // 是否以...结尾
 
 ### 数组函数
 
-```javascript
+``` typeScript
 size(arr)           // 数组大小
 first(arr)          // 第一个元素
 last(arr)           // 最后一个元素
@@ -211,7 +211,7 @@ reverseArray(arr)   // 反转数组
 
 ### 类型检查函数
 
-```javascript
+``` typeScript
 isArray(x)      // 是否为数组
 isObject(x)     // 是否为对象
 isString(x)     // 是否为字符串
@@ -223,7 +223,7 @@ isEmpty(x)      // 是否为空
 
 ### 日期函数
 
-```javascript
+``` typeScript
 now()                    // 当前时间戳
 date(timestamp)          // 创建日期
 format(date, pattern)    // 格式化日期
@@ -236,7 +236,7 @@ daysBetween(d1, d2)      // 计算天数差
 
 ### 条件函数
 
-```javascript
+``` typeScript
 if(condition, trueVal, falseVal)  // 条件选择
 switch(value, case1, val1, ...)   // switch选择
 coalesce(v1, v2, ...)             // 返回第一个非空值
@@ -245,7 +245,7 @@ defaultIfEmpty(val, default)       // 默认值
 
 ### 集合创建
 
-```javascript
+``` typeScript
 NewList(1, 2, 3)           // 创建List
 NewMap([key1, val1], ...)  // 创建Map
 NewSet(1, 2, 3)            // 创建Set
@@ -255,7 +255,7 @@ NewSet(1, 2, 3)            // 创建Set
 
 ### 添加自定义函数
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 添加简单函数
@@ -271,7 +271,7 @@ runner.execute('formatPrice(99.9)'); // 返回: "¥99.90"
 
 ### 添加自定义操作符
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 添加自定义操作符
@@ -289,7 +289,7 @@ runner.execute('1 + 2'); // 返回: 103
 
 ### 添加操作符别名
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 中文别名
@@ -303,7 +303,7 @@ runner.execute('10 加 5 乘 2'); // 返回: 20
 
 ### 宏定义
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 定义宏
@@ -319,9 +319,200 @@ const result = runner.execute('是否优秀', {
 console.log(result.value); // 输出: true
 ```
 
+### 预加载表达式 (loadMultiExpress)
+
+**功能说明**：预加载函数定义、类定义等元数据到引擎中，支持命名管理和重复调用。类似 Java QLExpress 的 `loadMultiExpress` 功能。
+
+#### 基础用法
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 无名预加载 - 函数定义
+runner.loadMultiExpress('', `
+  function add(a, b) {
+    return a + b;
+  }
+  
+  function multiply(a, b) {
+    return a * b;
+  }
+`);
+
+// 2. 多次调用已定义的函数
+runner.execute('add(10, 20)');      // 返回：30
+runner.execute('multiply(5, 6)');   // 返回：30
+runner.execute('add(100, 200)');    // 返回：300
+```
+
+#### 命名预加载与管理
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 命名预加载 - 便于后续调用和管理
+runner.loadMultiExpress('MathFunctions', `
+  function square(x) {
+    return x * x;
+  }
+  
+  function factorial(n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+  }
+  
+  function fibonacci(n) {
+    if (n <= 1) return 1;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+  }
+`);
+
+// 2. 通过名称执行预加载的表达式
+runner.executeByExpressName('MathFunctions', {});
+
+// 3. 在后续表达式中使用预加载的函数
+runner.execute('square(5)');           // 返回：25
+runner.execute('factorial(5)');        // 返回：120
+runner.execute('fibonacci(10)');       // 返回：89
+```
+
+#### 带上下文的函数调用
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载业务函数
+runner.loadMultiExpress('BusinessFunctions', `
+  function calculatePrice(price, discount, tax) {
+    const discountedPrice = price * (1 - discount);
+    const finalPrice = discountedPrice * (1 + tax);
+    return finalPrice.toFixed(2);
+  }
+`);
+
+// 2. 传入上下文变量执行
+const result = runner.execute('calculatePrice(价格，饭卡商家承担，平台补贴)', {
+  价格：100,
+  饭卡商家承担：0.2,
+  平台补贴：0.05
+});
+console.log(result.value); // 返回："84.00"
+```
+
+#### 闭包与状态保持
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载带状态的计数器函数
+runner.loadMultiExpress('CounterFunctions', `
+  var counter = 0;
+  
+  function increment(amount) {
+    counter += amount;
+    return counter;
+  }
+  
+  function getCounter() {
+    return counter;
+  }
+  
+  function resetCounter() {
+    counter = 0;
+    return "计数器已重置";
+  }
+`);
+
+// 2. 多次调用保持状态
+runner.execute('increment(5)');    // 返回：5
+runner.execute('increment(10)');   // 返回：15
+runner.execute('getCounter()');    // 返回：15
+runner.execute('resetCounter()');  // 返回："计数器已重置"
+runner.execute('getCounter()');    // 返回：0
+```
+
+#### 表达式管理 API
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载多个命名表达式
+runner.loadMultiExpress('Test1', 'var a = 1;');
+runner.loadMultiExpress('Test2', 'var b = 2;');
+
+// 2. 检查是否存在
+if (runner.hasNamedExpression('Test1')) {
+  console.log('Test1 已预加载');
+}
+
+// 3. 获取所有命名表达式
+const expressions = runner.getNamedExpressions();
+console.log(`已预加载 ${expressions.size} 个表达式`);
+
+// 4. 删除指定的命名表达式
+runner.removeNamedExpression('Test1');
+
+// 5. 清除所有命名表达式
+runner.clearNamedExpressions();
+
+// 6. 获取数量
+const count = runner.getNamedExpressionCount();
+```
+
+#### 复杂对象返回
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 预加载返回复杂对象的函数
+runner.loadMultiExpress('ResultFunctions', `
+  function createResult(success, message, data) {
+    return {
+      success: success,
+      message: message,
+      data: data,
+      timestamp: new Date().getTime()
+    };
+  }
+`);
+
+// 执行并获取结果
+const result = runner.execute('createResult(true, "成功", { id: 1 })');
+console.log(result.value);
+// 输出：{ success: true, message: "成功", data: { id: 1 }, timestamp: ... }
+```
+
+#### 多函数组合使用
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 预加载字符串处理函数
+runner.loadMultiExpress('StringFunctions', `
+  function reverse(str) {
+    return str.split('').reverse().join('');
+  }
+  
+  function toUpperCase(str) {
+    return str.toUpperCase();
+  }
+  
+  function combine(str1, str2) {
+    return str1 + " " + str2;
+  }
+`);
+
+// 链式调用多个函数
+const result = runner.execute('toUpperCase(reverse("hello"))');
+console.log(result.value); // 输出："OLLEH"
+
+const result2 = runner.execute('combine(toUpperCase("hello"), reverse("world"))')
+console.log(result2.value); // 输出："HELLO DLROW"
+```
+
 ### 绑定实例方法
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 const service = {
@@ -341,7 +532,7 @@ runner.execute('calculate(5, 3)'); // 返回: 115
 
 ### 超时控制
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner({
   security: { timeout: 1000 } // 1秒超时
 });
@@ -352,7 +543,7 @@ runner.execute('while(true){}', {}, { timeout: 100 });
 
 ### 循环次数限制
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner({
   security: { maxLoopCount: 10000 }
 });
@@ -360,7 +551,7 @@ const runner = new ExpressRunner({
 
 ### 沙箱模式
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner({
   security: { sandbox: true }
 });
@@ -373,7 +564,7 @@ const runner = new ExpressRunner({
 
 ### API访问控制
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 添加危险方法到黑名单
@@ -389,7 +580,7 @@ runner.addSecureMethod('MyClass', 'safeMethod');
 
 #### 构造函数
 
-```javascript
+``` typeScript
 new ExpressRunner(options?: {
   precise?: boolean;      // 是否高精度计算
   shortCircuit?: boolean; // 是否短路求值
@@ -400,7 +591,7 @@ new ExpressRunner(options?: {
 
 #### 执行方法
 
-```javascript
+``` typeScript
 execute(expression: string, context?: object, options?: {
   isCache?: boolean;
   isTrace?: boolean;
@@ -410,7 +601,7 @@ execute(expression: string, context?: object, options?: {
 
 #### 函数管理
 
-```javascript
+``` typeScript
 addFunction(name: string, handler: Function): void
 removeFunction(name: string): boolean
 hasFunction(name: string): boolean
@@ -419,7 +610,7 @@ addFunctionOfServiceMethod(name: string, service: object, method: string): void
 
 #### 操作符管理
 
-```javascript
+``` typeScript
 addOperator(name: string, handler: Function): void
 replaceOperator(name: string, handler: Function): void
 addOperatorWithAlias(alias: string, original: string): void
@@ -427,16 +618,68 @@ addOperatorWithAlias(alias: string, original: string): void
 
 #### 宏管理
 
-```javascript
+``` typeScript
 addMacro(name: string, expression: string): void
 removeMacro(name: string): boolean
 hasMacro(name: string): boolean
 getMacro(name: string): string
 ```
 
+#### 预加载表达式管理
+
+``` typeScript
+/**
+ * 预加载表达式（函数定义、类定义等）
+ * @param name - 表达式名称（可选，用于后续通过名称执行）
+ * @param expressContent - 表达式内容
+ * @param options - 配置选项
+ */
+loadMultiExpress(name: string = '', expressContent: string, options?: {
+  isCache?: boolean;
+  isTrace?: boolean;
+}): ExecutionResult
+
+/**
+ * 根据名称执行预加载的表达式
+ * @param name - 表达式名称
+ * @param context - 上下文对象
+ * @param options - 执行选项
+ */
+executeByExpressName(name: string, context?: object, options?: {
+  isCache?: boolean;
+  isTrace?: boolean;
+  timeout?: number;
+}): ExecutionResult
+
+/**
+ * 获取所有已预加载的命名表达式
+ */
+getNamedExpressions(): Map<string, string>
+
+/**
+ * 检查是否存在指定名称的表达式
+ */
+hasNamedExpression(name: string): boolean
+
+/**
+ * 删除指定的命名表达式
+ */
+removeNamedExpression(name: string): boolean
+
+/**
+ * 清除所有命名表达式
+ */
+clearNamedExpressions(): void
+
+/**
+ * 获取命名表达式数量
+ */
+getNamedExpressionCount(): number
+```
+
 #### 语法分析
 
-```javascript
+``` typeScript
 getOutVarNames(expression: string): string[]
 getOutFunctionNames(expression: string): string[]
 validate(expression: string): { valid: boolean; error?: string }
@@ -444,7 +687,7 @@ validate(expression: string): { valid: boolean; error?: string }
 
 #### 缓存管理
 
-```javascript
+``` typeScript
 getInstructionSetFromLocalCache(expression: string): any
 clearExpressCache(): void
 getCacheSize(): number
@@ -452,7 +695,7 @@ getCacheSize(): number
 
 #### 安全配置
 
-```javascript
+``` typeScript
 setSandboxMode(enabled: boolean): void
 setTimeout(timeout: number): void
 setMaxLoopCount(count: number): void
@@ -465,26 +708,26 @@ addSecureMethod(className: string, methodName: string): void
 
 ### 1. 规则引擎
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 定义业务规则
-runner.addMacro('VIP折扣', '会员等级 >= 3 ? 0.8 : (会员等级 >= 1 ? 0.9 : 1)');
+runner.addMacro('VIP 折扣', '会员等级 >= 3 ? 0.8 : (会员等级 >= 1 ? 0.9 : 1)');
 runner.addMacro('满减优惠', '订单金额 >= 500 ? 50 : (订单金额 >= 200 ? 20 : 0)');
 
 // 执行规则
 const order = {
-  会员等级: 3,
-  订单金额: 600
+  会员等级：3,
+  订单金额：600
 };
 
-const result = runner.execute('订单金额 * VIP折扣 - 满减优惠', order);
+const result = runner.execute('订单金额 * VIP 折扣 - 满减优惠', order);
 console.log(result.value); // 600 * 0.8 - 50 = 430
 ```
 
 ### 2. 动态配置
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 动态价格计算
@@ -500,13 +743,13 @@ const priceConfig = `
   }
 `;
 
-const price = runner.execute(priceConfig, { 单价: 100, 购买数量: 60 });
+const price = runner.execute(priceConfig, { 单价：100, 购买数量：60 });
 console.log(price.value); // 80
 ```
 
 ### 3. 数据验证
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 // 复杂验证规则
@@ -521,7 +764,7 @@ const validateRule = `
     return "手机号格式不正确";
   }
   if (age < 18 || age > 120) {
-    return "年龄必须在18-120之间";
+    return "年龄必须在 18-120 之间";
   }
   return "验证通过";
 `;
@@ -535,12 +778,12 @@ const result = runner.execute(validateRule, {
 
 ### 4. 报表计算
 
-```javascript
+``` typeScript
 const runner = new ExpressRunner();
 
 const reportData = {
-  销售额: [1000, 2000, 1500, 3000, 2500],
-  成本: [800, 1500, 1200, 2000, 1800]
+  销售额：[1000, 2000, 1500, 3000, 2500],
+  成本：[800, 1500, 1200, 2000, 1800]
 };
 
 // 计算利润率
@@ -553,6 +796,227 @@ const profitRate = runner.execute(`
 `, reportData);
 
 console.log(profitRate.value); // 利润率
+```
+
+### 5. 函数库预加载（推荐）
+
+**场景**：在复杂的业务系统中，预先加载常用的业务函数库，然后在多个规则中复用。
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载工具函数库
+runner.loadMultiExpress('StringUtils', `
+  function isNotEmpty(str) {
+    return str != null && str.trim() !== '';
+  }
+  
+  function isValidMobile(mobile) {
+    return /^1[3-9]\d{9}$/.test(mobile);
+  }
+  
+  function maskPhone(mobile) {
+    if (!isValidMobile(mobile)) return mobile;
+    return mobile.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+  }
+`);
+
+// 2. 预加载数学计算函数库
+runner.loadMultiExpress('MathUtils', `
+  function percentage(part, total) {
+    return total === 0 ? 0 : (part / total * 100).toFixed(2);
+  }
+  
+  function average(...numbers) {
+    if (numbers.length === 0) return 0;
+    const sum = numbers.reduce((a, b) => a + b, 0);
+    return (sum / numbers.length).toFixed(2);
+  }
+  
+  function stdDev(...numbers) {
+    if (numbers.length <= 1) return 0;
+    const avg = numbers.reduce((a, b) => a + b, 0) / numbers.length;
+    const squareDiffs = numbers.map(num => Math.pow(num - avg, 2));
+    const variance = squareDiffs.reduce((a, b) => a + b, 0) / numbers.length;
+    return Math.sqrt(variance).toFixed(2);
+  }
+`);
+
+// 3. 在实际业务规则中使用
+const userData = {
+  name: '张三',
+  mobile: '13800138000',
+  scores: [85, 92, 78, 90, 88]
+};
+
+const result = runner.execute(`
+  if (isNotEmpty(name) && isValidMobile(mobile)) {
+    maskedMobile = maskPhone(mobile);
+    avgScore = average(scores);
+    stdDevScore = stdDev(scores);
+    return {
+      姓名：name,
+      手机：maskedMobile,
+      平均分：avgScore,
+      标准差：stdDevScore
+    };
+  } else {
+    return "数据不完整";
+  }
+`, userData);
+
+console.log(result.value);
+// 输出：{ 姓名："张三", 手机："138****8000", 平均分："86.60", 标准差："4.98" }
+```
+
+### 6. 模板化业务计算
+
+**场景**：将常见的业务计算逻辑定义为模板函数，传入不同参数即可快速计算。
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载贷款计算器模板
+runner.loadMultiExpress('LoanCalculator', `
+  function calculateMonthlyPayment(principal, annualRate, months) {
+    // 等额本息还款
+    const monthlyRate = annualRate / 12 / 100;
+    if (monthlyRate === 0) {
+      return (principal / months).toFixed(2);
+    }
+    const payment = principal * monthlyRate * Math.pow(1 + monthlyRate, months) / 
+                    (Math.pow(1 + monthlyRate, months) - 1);
+    return payment.toFixed(2);
+  }
+  
+  function calculateTotalInterest(principal, monthlyPayment, months) {
+    // 计算总利息
+    const totalPayment = monthlyPayment * months;
+    return (totalPayment - principal).toFixed(2);
+  }
+  
+  function calculateLoanDetails(principal, annualRate, months) {
+    const monthlyPayment = calculateMonthlyPayment(principal, annualRate, months);
+    const totalInterest = calculateTotalInterest(principal, monthlyPayment, months);
+    return {
+      月供：monthlyPayment,
+      总利息：totalInterest,
+      还款总额：(Number(monthlyPayment) * months).toFixed(2)
+    };
+  }
+`);
+
+// 2. 计算不同贷款方案
+const loan1 = runner.execute('calculateLoanDetails(1000000, 4.9, 30)', {});
+console.log('贷款 100 万，30 年:', loan1.value);
+// 输出：{ 月供："5307.27", 总利息："910616.80", 还款总额："1910616.80" }
+
+const loan2 = runner.execute('calculateLoanDetails(500000, 4.5, 20)', {});
+console.log('贷款 50 万，20 年:', loan2.value);
+// 输出：{ 月供："3163.25", 总利息："259179.20", 还款总额："759179.20" }
+```
+
+### 7. 测试用例管理
+
+**场景**：分离函数定义和测试用例，便于单元测试和验证。
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载被测试的函数
+runner.loadMultiExpress('ValidatorFunctions', `
+  function isPrime(n) {
+    if (n <= 1) return false;
+    for (let i = 2; i <= Math.sqrt(n); i++) {
+      if (n % i === 0) return false;
+    }
+    return true;
+  }
+  
+  function isEven(n) {
+    return n % 2 === 0;
+  }
+  
+  function isOdd(n) {
+    return n % 2 !== 0;
+  }
+`);
+
+// 2. 执行多个测试用例
+const tests = [
+  { expr: 'isPrime(2)', expected: true },
+  { expr: 'isPrime(17)', expected: true },
+  { expr: 'isPrime(20)', expected: false },
+  { expr: 'isEven(10)', expected: true },
+  { expr: 'isOdd(7)', expected: true }
+];
+
+tests.forEach(test => {
+  const result = runner.execute(test.expr);
+  console.log(`${test.expr}: ${result.value} (期望：${test.expected})`);
+  if (result.value === test.expected) {
+    console.log('✓ 通过');
+  } else {
+    console.log('✗ 失败');
+  }
+});
+```
+
+### 8. 递归与高级算法
+
+**场景**：实现复杂的递归算法，并在多个地方调用。
+
+``` typeScript
+const runner = new ExpressRunner();
+
+// 1. 预加载递归函数库
+runner.loadMultiExpress('Algorithms', `
+  // 快速排序
+  function quickSort(arr) {
+    if (arr.length <= 1) return arr;
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(x => x < pivot);
+    const middle = arr.filter(x => x === pivot);
+    const right = arr.filter(x => x > pivot);
+    return [...quickSort(left), ...middle, ...quickSort(right)];
+  }
+  
+  // 二分查找
+  function binarySearch(arr, target) {
+    let left = 0;
+    let right = arr.length - 1;
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      if (arr[mid] === target) return mid;
+      if (arr[mid] < target) left = mid + 1;
+      else right = mid - 1;
+    }
+    return -1;
+  }
+  
+  // 最大公约数
+  function gcd(a, b) {
+    return b === 0 ? a : gcd(b, a % b);
+  }
+  
+  // 最小公倍数
+  function lcm(a, b) {
+    return (a * b) / gcd(a, b);
+  }
+`);
+
+// 2. 使用算法
+const sorted = runner.execute('quickSort([64, 34, 25, 12, 22, 11, 90])');
+console.log('排序结果:', sorted.value);
+
+const index = runner.execute('binarySearch([1, 3, 5, 7, 9, 11], 7)');
+console.log('查找位置:', index.value);
+
+const gcdResult = runner.execute('gcd(48, 18)');
+console.log('最大公约数:', gcdResult.value);
+
+const lcmResult = runner.execute('lcm(12, 18)');
+console.log('最小公倍数:', lcmResult.value);
 ```
 
 ## 与 QLExpress 的对比
@@ -568,6 +1032,10 @@ console.log(profitRate.value); // 利润率
 | 安全控制 | 多级安全 | 多级安全 |
 | 缓存 | 编译缓存 | 编译缓存 |
 | 沙箱模式 | 支持 | 支持 |
+| **预加载表达式** | **loadMultiExpress** | **✅ loadMultiExpress** |
+| **按名称执行** | **executeByExpressName** | **✅ executeByExpressName** |
+| **表达式管理** | **支持** | **✅ 完整支持** |
+| **闭包状态保持** | **支持** | **✅ 完整支持** |
 
 ## License
 

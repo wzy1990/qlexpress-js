@@ -126,6 +126,13 @@ export class Interpreter {
   }
 
   /**
+   * 添加用户定义函数（从外部加载）
+   */
+  addUserFunction(name: string, func: UserFunction): void {
+    this.userFunctions.set(name, func);
+  }
+
+  /**
    * 添加自定义操作符
    */
   addOperator(name: string, handler: (args: any[], context: IContext) => any): void {

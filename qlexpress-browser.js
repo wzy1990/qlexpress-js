@@ -2318,6 +2318,12 @@ var QLExpress = (function (exports) {
           this.customFunctions.set(name, handler);
       }
       /**
+       * 添加用户定义函数（从外部加载）
+       */
+      addUserFunction(name, func) {
+          this.userFunctions.set(name, func);
+      }
+      /**
        * 添加自定义操作符
        */
       addOperator(name, handler) {
@@ -3814,7 +3820,7 @@ var QLExpress = (function (exports) {
 
   /**
    * QLExpress-JS 表达式引擎
-   * 类似阿里巴巴QLExpress的JavaScript实现
+   * 类似阿里巴巴 QLExpress 的 JavaScript 实现
    */
   class ExpressRunner {
       /**
@@ -3823,6 +3829,7 @@ var QLExpress = (function (exports) {
       constructor(options = {}) {
           this.instructionCache = new Map();
           this.operatorAliases = new Map();
+          this.namedExpressions = new Map(); // 命名表达式存储
           this.config = {
               precise: options.precise ?? false,
               shortCircuit: options.shortCircuit ?? true,
@@ -3871,7 +3878,7 @@ var QLExpress = (function (exports) {
        * 执行表达式
        */
       execute(expression, context, options = {}) {
-          const { isCache = true, isTrace = false, timeout = 0 } = options;
+          const { isCache = true, isTrace = false, timeout = 0, useGlobalContext = true } = options;
           // 处理宏展开
           expression = this.expandMacros(expression);
           // 检查缓存
@@ -3890,7 +3897,7 @@ var QLExpress = (function (exports) {
               }
           }
           // 创建运行时上下文
-          const runtimeContext = this.createRuntimeContext(context);
+          const runtimeContext = this.createRuntimeContext(context, useGlobalContext);
           // 创建解释器
           const interpreter = new Interpreter(runtimeContext, {
               ...this.config,
@@ -3903,6 +3910,10 @@ var QLExpress = (function (exports) {
           // 注册自定义函数和操作符
           this.registerCustomFunctions(interpreter);
           this.registerCustomOperators(interpreter);
+          // 如果使用了全局上下文，需要将其中保存的用户定义函数注册到 interpreter
+          if (useGlobalContext && this.globalContext) {
+              this.registerUserFunctionsFromContext(interpreter);
+          }
           // 执行
           const startTime = Date.now();
           const result = interpreter.execute(cached);
@@ -3914,13 +3925,19 @@ var QLExpress = (function (exports) {
       /**
        * 创建运行时上下文
        */
-      createRuntimeContext(context) {
+      createRuntimeContext(context, useGlobalContext = true) {
           const initialVars = {};
           // 添加内置对象
           Object.assign(initialVars, BuiltinObjects.getAll());
           // 添加内置函数
           for (const [name, handler] of Object.entries(builtinFunctions)) {
               initialVars[name] = handler;
+          }
+          // 如果使用全局上下文且已存在，复制其中的变量
+          if (useGlobalContext && this.globalContext) {
+              for (const key of this.globalContext.keys()) {
+                  initialVars[key] = this.globalContext.get(key);
+              }
           }
           // 添加用户提供的上下文
           if (context) {
@@ -3936,7 +3953,12 @@ var QLExpress = (function (exports) {
                   Object.assign(initialVars, context);
               }
           }
-          return new RuntimeContext(initialVars);
+          const newContext = new RuntimeContext(initialVars);
+          // 保存为全局上下文
+          if (useGlobalContext) {
+              this.globalContext = newContext;
+          }
+          return newContext;
       }
       /**
        * 注册自定义函数
@@ -3954,6 +3976,25 @@ var QLExpress = (function (exports) {
           const operators = this.operatorManager.getAll();
           for (const [name, def] of operators) {
               interpreter.addOperator(name, def.handler);
+          }
+      }
+      /**
+       * 从全局上下文注册用户定义函数到解释器
+       */
+      registerUserFunctionsFromContext(interpreter) {
+          if (!this.globalContext)
+              return;
+          // 遍历 globalContext 中的所有变量
+          for (const key of this.globalContext.keys()) {
+              const value = this.globalContext.get(key);
+              // 如果值是 UserFunction 类型（有 name, params, body, closure 属性），则注册
+              if (value && typeof value === 'object' &&
+                  'name' in value &&
+                  'params' in value &&
+                  'body' in value &&
+                  'closure' in value) {
+                  interpreter.addUserFunction(key, value);
+              }
           }
       }
       /**
@@ -3988,6 +4029,112 @@ var QLExpress = (function (exports) {
               result.set(name, def.expression);
           }
           return result;
+      }
+      // ============ 多表达式加载 API（类似 Java QLExpress 的 loadMultiExpress） ============
+      /**
+       * 预加载表达式（类似 Java QLExpress 的 loadMultiExpress）
+       * 用于预先加载函数定义、类定义等，支持命名管理和重复调用
+       *
+       * @param name 表达式名称（可选，用于后续通过名称执行）
+       * @param expressContent 表达式内容（可以是函数定义、类定义等）
+       * @param options 配置选项
+       * @returns 执行结果
+       *
+       * @example
+       * // 无名预加载
+       * runner.loadMultiExpress('', 'function add(a, b) { return a + b; }');
+       *
+       * @example
+       * // 命名预加载
+       * runner.loadMultiExpress('MyFunctions', 'function multiply(a, b) { return a * b; }');
+       *
+       * @example
+       * // 后续调用
+       * runner.execute('add(10, 20)');
+       * runner.executeByExpressName('MyFunctions', {});
+       */
+      loadMultiExpress(name = '', expressContent, options = {}) {
+          const { isCache = true, isTrace = false } = options;
+          console.log(`🔄 预加载表达式${name ? `: "${name}"` : ''}`);
+          console.log('表达式内容:', expressContent);
+          // 如果提供了名称，保存到命名表达式集合
+          if (name && name.trim()) {
+              this.namedExpressions.set(name.trim(), expressContent);
+              console.log(`✅ 已保存命名表达式：${name}`);
+          }
+          // 立即执行预加载的表达式（用于注册函数、定义类等）
+          // 注意：这里不传 context，让函数注册到 runner 的全局作用域中
+          const result = this.execute(expressContent, undefined, { isCache, isTrace });
+          console.log(`✅ 预加载完成${name ? `: "${name}"` : ''}`);
+          return result;
+      }
+      /**
+       * 根据名称执行预加载的表达式
+       *
+       * @param name 表达式名称（通过 loadMultiExpress 预加载的名称）
+       * @param context 上下文对象或 IContext
+       * @param options 执行选项
+       * @returns 执行结果
+       *
+       * @throws Error 如果未找到指定名称的表达式
+       *
+       * @example
+       * // 先预加载
+       * runner.loadMultiExpress('MathFuncs', 'function square(x) { return x * x; }');
+       *
+       * @example
+       * // 通过名称执行
+       * const result = runner.executeByExpressName('MathFuncs', { x: 5 });
+       * console.log(result.value); // 输出：25
+       */
+      executeByExpressName(name, context, options = {}) {
+          const targetExpr = this.namedExpressions.get(name);
+          if (!targetExpr) {
+              throw new Error(`未找到名为 "${name}" 的预加载表达式。可用的表达式：${Array.from(this.namedExpressions.keys()).join(', ') || '无'}`);
+          }
+          console.log(`🚀 执行预加载表达式：${name}`);
+          console.log('表达式内容:', targetExpr);
+          return this.execute(targetExpr, context, options);
+      }
+      /**
+       * 获取所有已预加载的命名表达式
+       *
+       * @returns 返回包含所有命名表达式的 Map
+       */
+      getNamedExpressions() {
+          return new Map(this.namedExpressions);
+      }
+      /**
+       * 删除指定的命名表达式
+       *
+       * @param name 表达式名称
+       * @returns 是否删除成功
+       */
+      removeNamedExpression(name) {
+          return this.namedExpressions.delete(name);
+      }
+      /**
+       * 检查是否存在指定名称的表达式
+       *
+       * @param name 表达式名称
+       * @returns 是否存在
+       */
+      hasNamedExpression(name) {
+          return this.namedExpressions.has(name);
+      }
+      /**
+       * 清除所有命名表达式
+       */
+      clearNamedExpressions() {
+          this.namedExpressions.clear();
+      }
+      /**
+       * 获取命名表达式数量
+       *
+       * @returns 表达式数量
+       */
+      getNamedExpressionCount() {
+          return this.namedExpressions.size;
       }
       // ============ 函数管理 API ============
       /**

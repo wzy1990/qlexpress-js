@@ -1,5 +1,14 @@
 import { ExecutionResult, RuntimeConfig, IContext } from '../types';
-import { RuntimeContext } from './context';
+import { RuntimeContext, Scope } from './context';
+/**
+ * 用户自定义函数
+ */
+interface UserFunction {
+    name: string;
+    params: string[];
+    body: any;
+    closure: Scope;
+}
 /**
  * 解释器
  * 执行AST并返回结果
@@ -23,6 +32,10 @@ export declare class Interpreter {
      * 添加自定义函数
      */
     addFunction(name: string, handler: (...args: any[]) => any): void;
+    /**
+     * 添加用户定义函数（从外部加载）
+     */
+    addUserFunction(name: string, func: UserFunction): void;
     /**
      * 添加自定义操作符
      */
@@ -148,3 +161,4 @@ export declare class Interpreter {
      */
     private isEqual;
 }
+export {};

@@ -1,7 +1,7 @@
 import { IContext, ExecutionResult, RuntimeConfig, SecurityConfig } from './types';
 /**
  * QLExpress-JS 表达式引擎
- * 类似阿里巴巴QLExpress的JavaScript实现
+ * 类似阿里巴巴 QLExpress 的 JavaScript 实现
  */
 export declare class ExpressRunner {
     private config;
@@ -11,6 +11,8 @@ export declare class ExpressRunner {
     private operatorManager;
     private instructionCache;
     private operatorAliases;
+    private namedExpressions;
+    private globalContext?;
     /**
      * 创建表达式引擎实例
      */
@@ -26,6 +28,7 @@ export declare class ExpressRunner {
         isCache?: boolean;
         isTrace?: boolean;
         timeout?: number;
+        useGlobalContext?: boolean;
     }): ExecutionResult;
     /**
      * 创建运行时上下文
@@ -40,6 +43,10 @@ export declare class ExpressRunner {
      */
     private registerCustomOperators;
     /**
+     * 从全局上下文注册用户定义函数到解释器
+     */
+    private registerUserFunctionsFromContext;
+    /**
      * 展开宏
      */
     private expandMacros;
@@ -47,6 +54,86 @@ export declare class ExpressRunner {
      * 获取宏表达式映射
      */
     private getMacroExpressions;
+    /**
+     * 预加载表达式（类似 Java QLExpress 的 loadMultiExpress）
+     * 用于预先加载函数定义、类定义等，支持命名管理和重复调用
+     *
+     * @param name 表达式名称（可选，用于后续通过名称执行）
+     * @param expressContent 表达式内容（可以是函数定义、类定义等）
+     * @param options 配置选项
+     * @returns 执行结果
+     *
+     * @example
+     * // 无名预加载
+     * runner.loadMultiExpress('', 'function add(a, b) { return a + b; }');
+     *
+     * @example
+     * // 命名预加载
+     * runner.loadMultiExpress('MyFunctions', 'function multiply(a, b) { return a * b; }');
+     *
+     * @example
+     * // 后续调用
+     * runner.execute('add(10, 20)');
+     * runner.executeByExpressName('MyFunctions', {});
+     */
+    loadMultiExpress(name: string, expressContent: string, options?: {
+        isCache?: boolean;
+        isTrace?: boolean;
+    }): ExecutionResult;
+    /**
+     * 根据名称执行预加载的表达式
+     *
+     * @param name 表达式名称（通过 loadMultiExpress 预加载的名称）
+     * @param context 上下文对象或 IContext
+     * @param options 执行选项
+     * @returns 执行结果
+     *
+     * @throws Error 如果未找到指定名称的表达式
+     *
+     * @example
+     * // 先预加载
+     * runner.loadMultiExpress('MathFuncs', 'function square(x) { return x * x; }');
+     *
+     * @example
+     * // 通过名称执行
+     * const result = runner.executeByExpressName('MathFuncs', { x: 5 });
+     * console.log(result.value); // 输出：25
+     */
+    executeByExpressName(name: string, context?: IContext | Record<string, any>, options?: {
+        isCache?: boolean;
+        isTrace?: boolean;
+        timeout?: number;
+    }): ExecutionResult;
+    /**
+     * 获取所有已预加载的命名表达式
+     *
+     * @returns 返回包含所有命名表达式的 Map
+     */
+    getNamedExpressions(): Map<string, string>;
+    /**
+     * 删除指定的命名表达式
+     *
+     * @param name 表达式名称
+     * @returns 是否删除成功
+     */
+    removeNamedExpression(name: string): boolean;
+    /**
+     * 检查是否存在指定名称的表达式
+     *
+     * @param name 表达式名称
+     * @returns 是否存在
+     */
+    hasNamedExpression(name: string): boolean;
+    /**
+     * 清除所有命名表达式
+     */
+    clearNamedExpressions(): void;
+    /**
+     * 获取命名表达式数量
+     *
+     * @returns 表达式数量
+     */
+    getNamedExpressionCount(): number;
     /**
      * 添加自定义函数
      */
