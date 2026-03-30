@@ -9,10 +9,11 @@ import { useState } from 'react'
 import ExpressionConfig from './components/ExpressionConfig'
 import ExpressionEditor from './components/ExpressionEditor'
 import ExpressionConfigWithResult from './components/ExpressionConfigWithResult'
+import NodeConfig from './components/NodeConfig'
 import './App.less'
 
 function App() {
-  const [activeComponent, setActiveComponent] = useState<'config' | 'editor' | 'configWithResult'>('configWithResult')
+  const [activeComponent, setActiveComponent] = useState<'config' | 'editor' | 'configWithResult' | 'nodeConfig'>('configWithResult')
 
   return (
     <div className="app">
@@ -35,10 +36,17 @@ function App() {
         </button>
         <button 
           className={activeComponent === 'editor' ? 'btn btn-primary' : 'btn btn-default'} 
-          style={{ marginTop: '10px' }} 
+          style={{ marginTop: '10px', marginRight: '10px' }} 
           onClick={() => setActiveComponent('editor')}
         >
           表达式编辑器
+        </button>
+        <button 
+          className={activeComponent === 'nodeConfig' ? 'btn btn-primary' : 'btn btn-default'} 
+          style={{ marginTop: '10px' }} 
+          onClick={() => setActiveComponent('nodeConfig')}
+        >
+          节点配置
         </button>
       </header>
 
@@ -46,6 +54,7 @@ function App() {
         {activeComponent === 'config' && <ExpressionConfig />}
         {activeComponent === 'configWithResult' && <ExpressionConfigWithResult />}
         {activeComponent === 'editor' && <ExpressionEditor />}
+        {activeComponent === 'nodeConfig' && <NodeConfig />}
       </div>
     </div>
   )
