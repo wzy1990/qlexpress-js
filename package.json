@@ -9,7 +9,10 @@
     "build": "rollup -c",
     "build:browser": "rollup -c --environment BUILD:browser",
     "test": "node test/index.js",
-    "test:coverage": "node test/coverage.js"
+    "test:test-arrow-advanced": "node test/test-arrow-advanced.js",
+    "test:test-arrow-function": "node test/test-arrow-function.js",
+    "test:test-load-multi-express": "node test/test-load-multi-express.js",
+    "test:test-multiline": "node test/test-multiline.js"
   },
   "keywords": [
     "expression",

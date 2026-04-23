@@ -4,24 +4,31 @@
 
 const { ExpressRunner, execute } = require('../dist/index');
 
+// 测试工具函数
+let testCount = 0;
+let passCount = 0;
+let failCount = 0;
+
+function test(name, fn) {
+  testCount++;
+  try {
+    fn();
+    passCount++;
+    console.log(`✅ ${name}`);
+  } catch (error) {
+    failCount++;
+    console.log(`❌ ${name}`);
+    console.log(`   Error: ${error.message}`);
+    console.log(`   Stack: ${error.stack}`);
+  }
+}
+
 console.log('\n========================================');
 console.log('   多行表达式测试');
 console.log('========================================\n');
 
 // 创建测试用的 runner
 const runner = new ExpressRunner();
-
-// 测试工具函数
-function test(name, fn) {
-  try {
-    fn();
-    console.log(`✅ ${name}`);
-  } catch (error) {
-    console.log(`❌ ${name}`);
-    console.log(`   Error: ${error.message}`);
-    console.log(`   Stack: ${error.stack}`);
-  }
-}
 
 // ============ 多行表达式测试 ============
 
@@ -42,9 +49,9 @@ test('带变量的多行表达式', () => {
 饭卡商家承担 + 
 平台补贴`;
   const result = runner.execute(expression, {
-    '价格': 100,
-    '饭卡商家承担': 10,
-    '平台补贴': 5
+    价格: 100,
+    饭卡商家承担: 10,
+    平台补贴: 5,
   });
   console.log(`   表达式：${JSON.stringify(expression)}`);
   console.log(`   结果：${result.value}`);
@@ -59,9 +66,9 @@ test('带赋值的多行表达式', () => {
    - 饭卡商家承担
    + 平台补贴`;
   const result = runner.execute(expression, {
-    '价格': 100,
-    '饭卡商家承担': 10,
-    '平台补贴': 5
+    价格: 100,
+    饭卡商家承担: 10,
+    平台补贴: 5,
   });
   console.log(`   表达式：${JSON.stringify(expression)}`);
   console.log(`   结果：${result.value}`);
@@ -75,11 +82,12 @@ test('中文操作符的多行表达式', () => {
     则 价格 * 0.9
     否则 价格 * 0.95`;
   const result = runner.execute(expression, {
-    '价格': 120
+    价格: 120,
   });
   console.log(`   表达式：${JSON.stringify(expression)}`);
   console.log(`   结果：${result.value}`);
-  if (result.value !== 114) {  // 120 * 0.95 = 114
+  if (result.value !== 114) {
+    // 120 * 0.95 = 114
     throw new Error(`期望 114，实际 ${result.value}`);
   }
 });
@@ -104,8 +112,8 @@ test('复杂的多行表达式', () => {
 ELSE 
     价格 * 0.95 + 平台补贴`;
   const result = runner.execute(expression, {
-    '价格': 120,
-    '平台补贴': 5
+    价格: 120,
+    平台补贴: 5,
   });
   console.log(`   表达式：${JSON.stringify(expression)}`);
   console.log(`   结果：${result.value}`);
@@ -114,4 +122,13 @@ ELSE
   }
 });
 
-console.log('\n测试完成！\n');
+console.log('\n========================================');
+console.log(`   测试完成: ${testCount} 个测试`);
+console.log(`   ✅ 通过: ${passCount}`);
+console.log(`   ❌ 失败: ${failCount}`);
+console.log('========================================\n');
+
+// 返回退出码
+if (failCount > 0) {
+  process.exit(1);
+}

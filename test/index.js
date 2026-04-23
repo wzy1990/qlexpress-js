@@ -24,7 +24,9 @@ function test(name, fn) {
 
 function assertEqual(actual, expected, message = '') {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    throw new Error(`${message}\nExpected: ${JSON.stringify(expected)}\nActual: ${JSON.stringify(actual)}`);
+    throw new Error(
+      `${message}\nExpected: ${JSON.stringify(expected)}\nActual: ${JSON.stringify(actual)}`,
+    );
   }
 }
 
@@ -35,7 +37,9 @@ function assertThrows(fn, expectedMessage = '') {
   } catch (error) {
     thrown = true;
     if (expectedMessage && !error.message.includes(expectedMessage)) {
-      throw new Error(`Expected error message to include "${expectedMessage}", got "${error.message}"`);
+      throw new Error(
+        `Expected error message to include "${expectedMessage}", got "${error.message}"`,
+      );
     }
   }
   if (!thrown) {
@@ -112,7 +116,7 @@ test('复杂表达式', () => {
 
 test('多行表达式 - 加减法', () => {
   const expression = '商家应收=\n    价格\n   - 饭卡商家承担\n   + 平台补贴';
-  const context = { '价格': 100, '饭卡商家承担': 10, '平台补贴': 5 };
+  const context = { 价格: 100, 饭卡商家承担: 10, 平台补贴: 5 };
   const result = runner.execute(expression, context);
   assertEqual(result.value, 95);
 });
@@ -126,21 +130,21 @@ test('多行表达式 - 乘除法', () => {
 
 test('多行表达式 - 混合运算', () => {
   const expression = 'total =\n    价格\n   * 数量\n   - 折扣\n   + 税费';
-  const context = { '价格': 100, '数量': 2, '折扣': 20, '税费': 10 };
+  const context = { 价格: 100, 数量: 2, 折扣: 20, 税费: 10 };
   const result = runner.execute(expression, context);
   assertEqual(result.value, 190);
 });
 
 test('多行表达式 - 逻辑运算', () => {
   const expression = 'result =\n    条件1\n   && 条件2\n   || 条件3';
-  const context = { '条件1': true, '条件2': false, '条件3': true };
+  const context = { 条件1: true, 条件2: false, 条件3: true };
   const result = runner.execute(expression, context);
   assertEqual(result.value, true);
 });
 
 test('多行表达式 - 比较运算', () => {
   const expression = 'result =\n    数值1\n   > 数值2\n   && 数值1\n   < 数值3';
-  const context = { '数值1': 50, '数值2': 30, '数值3': 100 };
+  const context = { 数值1: 50, 数值2: 30, 数值3: 100 };
   const result = runner.execute(expression, context);
   assertEqual(result.value, true);
 });
@@ -154,14 +158,14 @@ test('多行表达式 - 复杂嵌套', () => {
 
 test('多行表达式 - 带空格和缩进', () => {
   const expression = '  计算  =\n      值1\n    + 值2\n    - 值3\n  ';
-  const context = { '值1': 100, '值2': 50, '值3': 30 };
+  const context = { 值1: 100, 值2: 50, 值3: 30 };
   const result = runner.execute(expression, context);
   assertEqual(result.value, 120);
 });
 
 test('多行表达式 - 中文变量名', () => {
   const expression = '总收入=\n    销售额\n   + 服务费\n   - 成本';
-  const context = { '销售额': 1000, '服务费': 200, '成本': 500 };
+  const context = { 销售额: 1000, 服务费: 200, 成本: 500 };
   const result = runner.execute(expression, context);
   assertEqual(result.value, 700);
 });
@@ -298,10 +302,14 @@ test('动态属性访问', () => {
 console.log('\n--- 控制流测试 ---\n');
 
 test('if语句', () => {
-  const result1 = runner.execute('if (1 > 0) then { return "positive" } else { return "negative" }');
+  const result1 = runner.execute(
+    'if (1 > 0) then { return "positive" } else { return "negative" }',
+  );
   assertEqual(result1.value, 'positive');
 
-  const result2 = runner.execute('if (1 < 0) then { return "positive" } else { return "negative" }');
+  const result2 = runner.execute(
+    'if (1 < 0) then { return "positive" } else { return "negative" }',
+  );
   assertEqual(result2.value, 'negative');
 });
 
@@ -472,13 +480,13 @@ console.log('\n--- 自定义函数和操作符测试 ---\n');
 
 test('添加自定义函数', () => {
   const customRunner = new ExpressRunner();
-  customRunner.addFunction('cube', (x) => x * x * x);
+  customRunner.addFunction('cube', x => x * x * x);
   assertEqual(customRunner.execute('cube(3)').value, 27);
 });
 
 test('添加自定义操作符', () => {
   const customRunner = new ExpressRunner();
-  customRunner.addOperator('<>', (args) => {
+  customRunner.addOperator('<>', args => {
     return Math.abs(args[0] - args[1]);
   });
   assertEqual(customRunner.execute('10 <> 3').value, 7);
@@ -516,7 +524,7 @@ console.log('\n--- 安全控制测试 ---\n');
 
 test('超时控制', () => {
   const customRunner = new ExpressRunner({
-    security: { timeout: 100 }
+    security: { timeout: 100 },
   });
 
   assertThrows(() => {
@@ -531,7 +539,7 @@ test('超时控制', () => {
 
 test('循环次数限制', () => {
   const customRunner = new ExpressRunner({
-    security: { maxLoopCount: 100 }
+    security: { maxLoopCount: 100 },
   });
 
   assertThrows(() => {
@@ -543,7 +551,7 @@ test('循环次数限制', () => {
 
 test('沙箱模式', () => {
   const customRunner = new ExpressRunner({
-    security: { sandbox: true }
+    security: { sandbox: true },
   });
 
   // 沙箱模式下禁止new操作
