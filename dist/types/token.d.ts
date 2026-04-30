@@ -7,6 +7,7 @@ export declare enum TokenType {
     BOOLEAN = "BOOLEAN",
     NULL = "NULL",
     IDENTIFIER = "IDENTIFIER",
+    PLACEHOLDER = "PLACEHOLDER",// 新增：占位符 ${placeholder}
     IF = "IF",
     THEN = "THEN",
     ELSE = "ELSE",

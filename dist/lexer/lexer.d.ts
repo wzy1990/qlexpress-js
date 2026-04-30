@@ -33,6 +33,10 @@ export declare class Lexer {
      */
     private scanString;
     /**
+     * 扫描占位符：${placeholder}
+     */
+    private scanPlaceholder;
+    /**
      * 扫描标识符
      */
     private scanIdentifier;
@@ -44,6 +48,10 @@ export declare class Lexer {
      * 扫描行注释
      */
     private scanLineComment;
+    /**
+     * 辅助方法：检查是否为有效标识符
+     */
+    private isValidIdentifier;
     /**
      * 辅助方法：前进一个字符
      */

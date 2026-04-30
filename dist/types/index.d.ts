@@ -27,6 +27,16 @@ export interface IFunction {
     execute(args: any[], context: IContext): any;
 }
 /**
+ * 方法信息接口
+ */
+export interface FunctionInfo {
+    className?: string;
+    instance?: any;
+    methodName: string;
+    paramTypes?: string[];
+    type: 'static' | 'instance';
+}
+/**
  * 安全配置
  */
 export interface SecurityConfig {

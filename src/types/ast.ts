@@ -1,5 +1,3 @@
-import { Token } from './token';
-
 /**
  * AST节点类型枚举
  */
@@ -12,6 +10,7 @@ export enum NodeType {
 
   // 标识符
   Identifier = 'Identifier',
+  Placeholder = 'Placeholder', // 新增：占位符节点
 
   // 数组和对象
   ArrayExpression = 'ArrayExpression',
@@ -46,7 +45,7 @@ export enum NodeType {
   InExpression = 'InExpression',
   LikeExpression = 'LikeExpression',
   BetweenExpression = 'BetweenExpression',
-  MacroCall = 'MacroCall'
+  MacroCall = 'MacroCall',
 }
 
 /**
@@ -94,6 +93,14 @@ export interface NullLiteral extends BaseNode {
  */
 export interface Identifier extends BaseNode {
   type: NodeType.Identifier;
+  name: string;
+}
+
+/**
+ * 占位符节点
+ */
+export interface Placeholder extends BaseNode {
+  type: NodeType.Placeholder;
   name: string;
 }
 
@@ -234,6 +241,7 @@ export type Expression =
   | BooleanLiteral
   | NullLiteral
   | Identifier
+  | Placeholder // 新增：占位符表达式
   | ArrayExpression
   | ObjectExpression
   | BinaryExpression

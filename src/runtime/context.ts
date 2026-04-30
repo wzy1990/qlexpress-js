@@ -1,4 +1,4 @@
-import { IContext, RuntimeError } from '../types';
+import { IContext } from '../types';
 
 /**
  * 作用域类
@@ -267,7 +267,7 @@ export class BuiltinObjects {
     LOG2E: Math.LOG2E,
     LOG10E: Math.LOG10E,
     SQRT2: Math.SQRT2,
-    SQRT1_2: Math.SQRT1_2
+    SQRT1_2: Math.SQRT1_2,
   };
 
   /**
@@ -275,7 +275,7 @@ export class BuiltinObjects {
    */
   static JSON = {
     parse: JSON.parse,
-    stringify: JSON.stringify
+    stringify: JSON.stringify,
   };
 
   /**
@@ -293,7 +293,7 @@ export class BuiltinObjects {
     assign: Object.assign,
     create: Object.create,
     freeze: Object.freeze,
-    fromEntries: Object.fromEntries
+    fromEntries: Object.fromEntries,
   };
 
   /**
@@ -301,7 +301,7 @@ export class BuiltinObjects {
    */
   static String = {
     fromCharCode: String.fromCharCode,
-    fromCodePoint: String.fromCodePoint
+    fromCodePoint: String.fromCodePoint,
   };
 
   /**
@@ -316,7 +316,7 @@ export class BuiltinObjects {
     MAX_VALUE: Number.MAX_VALUE,
     MIN_VALUE: Number.MIN_VALUE,
     POSITIVE_INFINITY: Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY: Number.NEGATIVE_INFINITY
+    NEGATIVE_INFINITY: Number.NEGATIVE_INFINITY,
   };
 
   /**
@@ -371,7 +371,7 @@ export class BuiltinObjects {
       Error: BuiltinObjects.Error,
       Map: BuiltinObjects.Map,
       Set: BuiltinObjects.Set,
-      Promise: BuiltinObjects.Promise
+      Promise: BuiltinObjects.Promise,
     };
   }
 }

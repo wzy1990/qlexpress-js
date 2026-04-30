@@ -1,1 +1,1 @@
-export { MacroManager, CustomFunctionManager, CustomOperatorManager, ExternalMethodManager } from './managers';
+export { MacroManager, CustomFunctionManager, CustomOperatorManager, ExternalMethodManager, } from './managers';

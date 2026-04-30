@@ -1,20 +1,17 @@
+import { builtinFunctions } from './functions';
+import { Lexer } from './lexer';
+import { CustomFunctionManager, CustomOperatorManager, MacroManager } from './operators';
+import { Parser } from './parser';
+import { BuiltinObjects, Interpreter, RuntimeContext } from './runtime';
+import { SecurityManager } from './security';
 import {
-  IContext,
   ExecutionResult,
+  IContext,
+  Identifier,
+  NodeType,
   RuntimeConfig,
   SecurityConfig,
-  ParseError,
-  RuntimeError,
-  TimeoutError,
-  NodeType,
-  Identifier
 } from './types';
-import { Lexer } from './lexer';
-import { Parser } from './parser';
-import { RuntimeContext, Interpreter, BuiltinObjects } from './runtime';
-import { builtinFunctions } from './functions';
-import { SecurityManager } from './security';
-import { MacroManager, CustomFunctionManager, CustomOperatorManager } from './operators';
 
 /**
  * QLExpress-JS 表达式引擎
@@ -46,8 +43,8 @@ export class ExpressRunner {
         maxArrayLength: options.security?.maxArrayLength ?? 100000,
         forbidRiskMethods: options.security?.forbidRiskMethods ?? true,
         riskMethodBlacklist: options.security?.riskMethodBlacklist ?? [],
-        allowedMethods: options.security?.allowedMethods ?? null
-      }
+        allowedMethods: options.security?.allowedMethods ?? null,
+      },
     };
 
     this.securityManager = new SecurityManager(this.config.security);
@@ -94,19 +91,19 @@ export class ExpressRunner {
       isTrace?: boolean;
       timeout?: number;
       useGlobalContext?: boolean; // 是否使用全局上下文（默认 true）
-    } = {}
+    } = {},
   ): ExecutionResult {
     const { isCache = true, isTrace = false, timeout = 0, useGlobalContext = true } = options;
 
     // 处理宏展开
-    expression = this.expandMacros(expression);
+    const expandedExpression = this.expandMacros(expression);
 
     // 检查缓存
-    let cached = isCache ? this.instructionCache.get(expression) : null;
+    let cached = isCache ? this.instructionCache.get(expandedExpression) : null;
 
     if (!cached) {
       // 词法分析
-      const lexer = new Lexer(expression);
+      const lexer = new Lexer(expandedExpression);
       const tokens = lexer.tokenize();
 
       // 语法分析
@@ -117,7 +114,7 @@ export class ExpressRunner {
 
       // 缓存编译结果
       if (isCache) {
-        this.instructionCache.set(expression, cached);
+        this.instructionCache.set(expandedExpression, cached);
       }
     }
 
@@ -130,14 +127,14 @@ export class ExpressRunner {
       trace: isTrace || this.config.trace,
       security: {
         ...this.config.security,
-        timeout: timeout || this.config.security.timeout
-      }
+        timeout: timeout || this.config.security.timeout,
+      },
     });
 
     // 注册自定义函数和操作符
     this.registerCustomFunctions(interpreter);
     this.registerCustomOperators(interpreter);
-    
+
     // 如果使用了全局上下文，需要将其中保存的用户定义函数注册到 interpreter
     if (useGlobalContext && this.globalContext) {
       this.registerUserFunctionsFromContext(interpreter);
@@ -157,7 +154,10 @@ export class ExpressRunner {
   /**
    * 创建运行时上下文
    */
-  private createRuntimeContext(context?: IContext | Record<string, any>, useGlobalContext = true): RuntimeContext {
+  private createRuntimeContext(
+    context?: IContext | Record<string, any>,
+    useGlobalContext = true,
+  ): RuntimeContext {
     const initialVars: Record<string, any> = {};
 
     // 添加内置对象
@@ -190,12 +190,12 @@ export class ExpressRunner {
     }
 
     const newContext = new RuntimeContext(initialVars);
-    
+
     // 保存为全局上下文
     if (useGlobalContext) {
       this.globalContext = newContext;
     }
-    
+
     return newContext;
   }
 
@@ -229,11 +229,14 @@ export class ExpressRunner {
     for (const key of this.globalContext.keys()) {
       const value = this.globalContext.get(key);
       // 如果值是 UserFunction 类型（有 name, params, body, closure 属性），则注册
-      if (value && typeof value === 'object' && 
-          'name' in value && 
-          'params' in value && 
-          'body' in value && 
-          'closure' in value) {
+      if (
+        value &&
+        typeof value === 'object' &&
+        'name' in value &&
+        'params' in value &&
+        'body' in value &&
+        'closure' in value
+      ) {
         interpreter.addUserFunction(key, value);
       }
     }
@@ -280,20 +283,20 @@ export class ExpressRunner {
   /**
    * 预加载表达式（类似 Java QLExpress 的 loadMultiExpress）
    * 用于预先加载函数定义、类定义等，支持命名管理和重复调用
-   * 
+   *
    * @param name 表达式名称（可选，用于后续通过名称执行）
    * @param expressContent 表达式内容（可以是函数定义、类定义等）
    * @param options 配置选项
    * @returns 执行结果
-   * 
+   *
    * @example
    * // 无名预加载
    * runner.loadMultiExpress('', 'function add(a, b) { return a + b; }');
-   * 
+   *
    * @example
    * // 命名预加载
    * runner.loadMultiExpress('MyFunctions', 'function multiply(a, b) { return a * b; }');
-   * 
+   *
    * @example
    * // 后续调用
    * runner.execute('add(10, 20)');
@@ -305,7 +308,7 @@ export class ExpressRunner {
     options: {
       isCache?: boolean;
       isTrace?: boolean;
-    } = {}
+    } = {},
   ): ExecutionResult {
     const { isCache = true, isTrace = false } = options;
 
@@ -328,18 +331,18 @@ export class ExpressRunner {
 
   /**
    * 根据名称执行预加载的表达式
-   * 
+   *
    * @param name 表达式名称（通过 loadMultiExpress 预加载的名称）
    * @param context 上下文对象或 IContext
    * @param options 执行选项
    * @returns 执行结果
-   * 
+   *
    * @throws Error 如果未找到指定名称的表达式
-   * 
+   *
    * @example
    * // 先预加载
    * runner.loadMultiExpress('MathFuncs', 'function square(x) { return x * x; }');
-   * 
+   *
    * @example
    * // 通过名称执行
    * const result = runner.executeByExpressName('MathFuncs', { x: 5 });
@@ -352,12 +355,16 @@ export class ExpressRunner {
       isCache?: boolean;
       isTrace?: boolean;
       timeout?: number;
-    } = {}
+    } = {},
   ): ExecutionResult {
     const targetExpr = this.namedExpressions.get(name);
-    
+
     if (!targetExpr) {
-      throw new Error(`未找到名为 "${name}" 的预加载表达式。可用的表达式：${Array.from(this.namedExpressions.keys()).join(', ') || '无'}`);
+      throw new Error(
+        `未找到名为 "${name}" 的预加载表达式。可用的表达式：${
+          Array.from(this.namedExpressions.keys()).join(', ') || '无'
+        }`,
+      );
     }
 
     console.log(`🚀 执行预加载表达式：${name}`);
@@ -368,7 +375,7 @@ export class ExpressRunner {
 
   /**
    * 获取所有已预加载的命名表达式
-   * 
+   *
    * @returns 返回包含所有命名表达式的 Map
    */
   getNamedExpressions(): Map<string, string> {
@@ -377,7 +384,7 @@ export class ExpressRunner {
 
   /**
    * 删除指定的命名表达式
-   * 
+   *
    * @param name 表达式名称
    * @returns 是否删除成功
    */
@@ -387,7 +394,7 @@ export class ExpressRunner {
 
   /**
    * 检查是否存在指定名称的表达式
-   * 
+   *
    * @param name 表达式名称
    * @returns 是否存在
    */
@@ -404,7 +411,7 @@ export class ExpressRunner {
 
   /**
    * 获取命名表达式数量
-   * 
+   *
    * @returns 表达式数量
    */
   getNamedExpressionCount(): number {
@@ -442,7 +449,7 @@ export class ExpressRunner {
     functionName: string,
     className: string,
     methodName: string,
-    paramTypes?: string[]
+    paramTypes?: string[],
   ): void {
     // 对于JavaScript，我们需要存储类引用和方法名
     // 这里简化实现，直接绑定方法
@@ -460,7 +467,7 @@ export class ExpressRunner {
     functionName: string,
     service: T,
     methodName: keyof T,
-    paramTypes?: string[]
+    paramTypes?: string[],
   ): void {
     const method = service[methodName];
     if (typeof method !== 'function') {
@@ -468,18 +475,14 @@ export class ExpressRunner {
     }
 
     this.addFunction(functionName, (...args: any[]) => {
-      return (method as Function).apply(service, args);
+      return (method as (...args: any[]) => any).apply(service, args);
     });
   }
 
   /**
    * 同时支持 a.fun(b) 和 fun(a, b) 两种调用方式
    */
-  addFunctionAndClassMethod(
-    functionName: string,
-    className: string,
-    methodName: string
-  ): void {
+  addFunctionAndClassMethod(functionName: string, className: string, methodName: string): void {
     this.addFunctionOfClassMethod(functionName, className, methodName);
   }
 
@@ -488,31 +491,21 @@ export class ExpressRunner {
   /**
    * 添加自定义操作符
    */
-  addOperator(
-    name: string,
-    handler: (args: any[], context: IContext) => any
-  ): void {
+  addOperator(name: string, handler: (args: any[], context: IContext) => any): void {
     this.operatorManager.add(name, handler);
   }
 
   /**
    * 替换操作符处理
    */
-  replaceOperator(
-    name: string,
-    handler: (args: any[], context: IContext) => any
-  ): void {
+  replaceOperator(name: string, handler: (args: any[], context: IContext) => any): void {
     this.operatorManager.add(name, handler);
   }
 
   /**
    * 添加操作符别名
    */
-  addOperatorWithAlias(
-    alias: string,
-    originalName: string,
-    errorInfo?: string | null
-  ): void {
+  addOperatorWithAlias(alias: string, originalName: string, errorInfo?: string | null): void {
     this.operatorAliases.set(alias, originalName);
     this.operatorManager.addAlias(alias, originalName);
   }
@@ -560,9 +553,9 @@ export class ExpressRunner {
    * 获取表达式需要的外部变量名称列表
    */
   getOutVarNames(expression: string): string[] {
-    expression = this.expandMacros(expression);
+    const expandedExpression = this.expandMacros(expression);
 
-    const lexer = new Lexer(expression);
+    const lexer = new Lexer(expandedExpression);
     const tokens = lexer.tokenize();
     const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
     const ast = parser.parse();
@@ -574,7 +567,10 @@ export class ExpressRunner {
     const builtins = new Set([
       ...Object.keys(builtinFunctions),
       ...Object.keys(BuiltinObjects.getAll()),
-      'true', 'false', 'null', 'undefined'
+      'true',
+      'false',
+      'null',
+      'undefined',
     ]);
 
     return Array.from(varNames).filter(name => !builtins.has(name));
@@ -611,9 +607,9 @@ export class ExpressRunner {
    * 获取表达式需要的函数名称列表
    */
   getOutFunctionNames(expression: string): string[] {
-    expression = this.expandMacros(expression);
+    const expandedExpression = this.expandMacros(expression);
 
-    const lexer = new Lexer(expression);
+    const lexer = new Lexer(expandedExpression);
     const tokens = lexer.tokenize();
     const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
     const ast = parser.parse();
@@ -656,9 +652,9 @@ export class ExpressRunner {
    */
   validate(expression: string): { valid: boolean; error?: string } {
     try {
-      expression = this.expandMacros(expression);
+      const expandedExpression = this.expandMacros(expression);
 
-      const lexer = new Lexer(expression);
+      const lexer = new Lexer(expandedExpression);
       const tokens = lexer.tokenize();
       const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
       parser.parse();
@@ -667,7 +663,7 @@ export class ExpressRunner {
     } catch (error) {
       return {
         valid: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -806,7 +802,7 @@ export function execute(
     precise?: boolean;
     shortCircuit?: boolean;
     timeout?: number;
-  }
+  },
 ): any {
   const runner = new ExpressRunner({
     precise: options?.precise,
@@ -818,8 +814,8 @@ export function execute(
       maxArrayLength: 100000,
       forbidRiskMethods: true,
       riskMethodBlacklist: [],
-      allowedMethods: null
-    }
+      allowedMethods: null,
+    },
   });
 
   return runner.execute(expression, context).value;

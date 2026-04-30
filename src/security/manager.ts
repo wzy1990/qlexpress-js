@@ -1,4 +1,4 @@
-import { SecurityError, SecurityConfig } from '../types';
+import { SecurityConfig, SecurityError } from '../types';
 
 /**
  * 安全管理器
@@ -22,7 +22,7 @@ export class SecurityManager {
     'global',
     'globalThis',
     '__dirname',
-    '__filename'
+    '__filename',
   ];
 
   constructor(config: Partial<SecurityConfig> = {}) {
@@ -33,13 +33,13 @@ export class SecurityManager {
       maxArrayLength: config.maxArrayLength ?? 100000,
       forbidRiskMethods: config.forbidRiskMethods ?? true,
       riskMethodBlacklist: config.riskMethodBlacklist ?? [],
-      allowedMethods: config.allowedMethods ?? null
+      allowedMethods: config.allowedMethods ?? null,
     };
 
     // 合并默认黑名单
     this.config.riskMethodBlacklist = [
       ...SecurityManager.DEFAULT_BLACKLIST,
-      ...this.config.riskMethodBlacklist
+      ...this.config.riskMethodBlacklist,
     ];
   }
 
@@ -83,7 +83,7 @@ export class SecurityManager {
    */
   isBlacklisted(methodName: string): boolean {
     return this.config.riskMethodBlacklist.some(
-      blocked => methodName === blocked || methodName.startsWith(blocked + '.')
+      blocked => methodName === blocked || methodName.startsWith(blocked + '.'),
     );
   }
 
@@ -122,7 +122,9 @@ export class SecurityManager {
    */
   checkArrayLength(length: number): void {
     if (length > this.config.maxArrayLength) {
-      throw new SecurityError(`Array length ${length} exceeds maximum ${this.config.maxArrayLength}`);
+      throw new SecurityError(
+        `Array length ${length} exceeds maximum ${this.config.maxArrayLength}`,
+      );
     }
   }
 
@@ -218,7 +220,16 @@ export class SecurityManager {
     const safeEnv: Record<string, any> = {};
 
     // 只允许安全的内置对象
-    const allowedObjects = ['Math', 'JSON', 'Date', 'Boolean', 'Number', 'String', 'Array', 'Object'];
+    const allowedObjects = [
+      'Math',
+      'JSON',
+      'Date',
+      'Boolean',
+      'Number',
+      'String',
+      'Array',
+      'Object',
+    ];
 
     for (const name of allowedObjects) {
       if (typeof (globalThis as any)[name] !== 'undefined') {

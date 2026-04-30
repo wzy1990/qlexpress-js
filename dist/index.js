@@ -3,6 +3,384 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /**
+ * 格式化值用于打印
+ */
+function formatValue(value) {
+    if (value === null)
+        return 'null';
+    if (value === undefined)
+        return 'undefined';
+    if (typeof value === 'string')
+        return value;
+    if (typeof value === 'number' || typeof value === 'boolean')
+        return String(value);
+    if (Array.isArray(value))
+        return JSON.stringify(value);
+    if (typeof value === 'object')
+        return JSON.stringify(value);
+    return String(value);
+}
+/**
+ * 内置函数集合
+ */
+const builtinFunctions = {
+    /**
+     * 数学函数
+     */
+    abs: (x) => Math.abs(x),
+    ceil: (x) => Math.ceil(x),
+    floor: (x) => Math.floor(x),
+    round: (x) => Math.round(x),
+    sqrt: (x) => Math.sqrt(x),
+    pow: (x, y) => Math.pow(x, y),
+    exp: (x) => Math.exp(x),
+    log: (x) => Math.log(x),
+    log10: (x) => Math.log10(x),
+    log2: (x) => Math.log2(x),
+    /**
+     * 三角函数
+     */
+    sin: (x) => Math.sin(x),
+    cos: (x) => Math.cos(x),
+    tan: (x) => Math.tan(x),
+    asin: (x) => Math.asin(x),
+    acos: (x) => Math.acos(x),
+    atan: (x) => Math.atan(x),
+    atan2: (y, x) => Math.atan2(y, x),
+    /**
+     * 聚合函数
+     */
+    min: (...args) => Math.min(...args),
+    max: (...args) => Math.max(...args),
+    sum: (...args) => args.reduce((a, b) => a + b, 0),
+    avg: (...args) => {
+        if (args.length === 0)
+            return 0;
+        return args.reduce((a, b) => a + b, 0) / args.length;
+    },
+    /**
+     * 类型转换函数
+     */
+    parseInt: (s, radix) => parseInt(s, radix || 10),
+    parseFloat: (s) => parseFloat(s),
+    toString: (value) => String(value),
+    toNumber: (value) => {
+        if (typeof value === 'number')
+            return value;
+        if (typeof value === 'string')
+            return parseFloat(value);
+        if (typeof value === 'boolean')
+            return value ? 1 : 0;
+        return 0;
+    },
+    toBoolean: (value) => Boolean(value),
+    /**
+     * 类型检查函数
+     */
+    isNaN: (value) => Number.isNaN(value),
+    isFinite: (value) => Number.isFinite(value),
+    isInteger: (value) => Number.isInteger(value),
+    isArray: (value) => Array.isArray(value),
+    isObject: (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+    isString: (value) => typeof value === 'string',
+    isNumber: (value) => typeof value === 'number',
+    isBoolean: (value) => typeof value === 'boolean',
+    isFunction: (value) => typeof value === 'function',
+    isNull: (value) => value === null,
+    isUndefined: (value) => value === undefined,
+    isEmpty: (value) => {
+        if (value === null || value === undefined)
+            return true;
+        if (typeof value === 'string')
+            return value.length === 0;
+        if (Array.isArray(value))
+            return value.length === 0;
+        if (value instanceof Map || value instanceof Set)
+            return value.size === 0;
+        if (typeof value === 'object')
+            return Object.keys(value).length === 0;
+        return false;
+    },
+    /**
+     * 字符串函数
+     */
+    strlen: (s) => s.length,
+    strlenb: (s) => {
+        // 使用TextEncoder代替Buffer
+        try {
+            return new TextEncoder().encode(s).length;
+        }
+        catch {
+            return s.length;
+        }
+    },
+    substr: (s, start, length) => s.substr(start, length),
+    substring: (s, start, end) => s.substring(start, end),
+    indexOf: (s, search, position) => s.indexOf(search, position),
+    lastIndexOf: (s, search, position) => s.lastIndexOf(search, position),
+    replace: (s, search, replace) => s.replace(search, replace),
+    replaceAll: (s, search, replace) => s.split(search).join(replace),
+    trim: (s) => s.trim(),
+    trimLeft: (s) => s.trimStart(),
+    trimRight: (s) => s.trimEnd(),
+    toUpperCase: (s) => s.toUpperCase(),
+    toLowerCase: (s) => s.toLowerCase(),
+    capitalize: (s) => s.charAt(0).toUpperCase() + s.slice(1),
+    split: (s, separator, limit) => s.split(separator, limit),
+    join: (arr, separator = ',') => arr.join(separator),
+    charAt: (s, index) => s.charAt(index),
+    charCodeAt: (s, index) => s.charCodeAt(index),
+    startsWith: (s, search, position) => s.startsWith(search, position),
+    endsWith: (s, search, endPosition) => s.endsWith(search, endPosition),
+    includes: (s, search, position) => s.includes(search, position),
+    repeat: (s, count) => s.repeat(count),
+    padLeft: (s, length, char = ' ') => s.padStart(length, char),
+    padRight: (s, length, char = ' ') => s.padEnd(length, char),
+    reverse: (s) => s.split('').reverse().join(''),
+    /**
+     * 数组函数
+     */
+    size: (arr) => {
+        if (Array.isArray(arr) || typeof arr === 'string')
+            return arr.length;
+        if (arr instanceof Map || arr instanceof Set)
+            return arr.size;
+        if (typeof arr === 'object' && arr !== null)
+            return Object.keys(arr).length;
+        return 0;
+    },
+    length: (arr) => arr.length,
+    push: (arr, ...items) => arr.push(...items),
+    pop: (arr) => arr.pop(),
+    shift: (arr) => arr.shift(),
+    unshift: (arr, ...items) => arr.unshift(...items),
+    slice: (arr, start, end) => arr.slice(start, end),
+    concat: (arr, ...items) => arr.concat(...items),
+    reverseArray: (arr) => [...arr].reverse(),
+    sort: (arr, compareFn) => [...arr].sort(compareFn),
+    flatten: (arr, depth = 1) => arr.flat(depth),
+    unique: (arr) => [...new Set(arr)],
+    first: (arr) => arr[0],
+    last: (arr) => arr[arr.length - 1],
+    range: (start, end, step = 1) => {
+        let actualStart = start;
+        let actualEnd = end;
+        if (actualEnd === undefined) {
+            actualEnd = actualStart;
+            actualStart = 0;
+        }
+        const result = [];
+        for (let i = actualStart; step > 0 ? i < actualEnd : i > actualEnd; i += step) {
+            result.push(i);
+        }
+        return result;
+    },
+    /**
+     * 对象函数
+     */
+    keys: (obj) => Object.keys(obj),
+    values: (obj) => Object.values(obj),
+    entries: (obj) => Object.entries(obj),
+    fromEntries: (entries) => Object.fromEntries(entries),
+    hasKey: (obj, key) => key in obj,
+    getValue: (obj, key, defaultValue) => {
+        const value = obj[key];
+        return value !== undefined ? value : defaultValue;
+    },
+    setValue: (obj, key, value) => {
+        obj[key] = value;
+        return obj;
+    },
+    removeKey: (obj, key) => {
+        delete obj[key];
+        return obj;
+    },
+    merge: (...objs) => Object.assign({}, ...objs),
+    deepClone: (obj) => JSON.parse(JSON.stringify(obj)),
+    /**
+     * 条件函数
+     */
+    iif: (condition, trueValue, falseValue) => (condition ? trueValue : falseValue),
+    switchCase: (value, ...cases) => {
+        for (let i = 0; i < cases.length - 1; i += 2) {
+            if (value === cases[i])
+                return cases[i + 1];
+        }
+        return cases.length % 2 === 1 ? cases[cases.length - 1] : undefined;
+    },
+    coalesce: (...values) => values.find(v => v !== null && v !== undefined),
+    defaultIfEmpty: (value, defaultValue) => {
+        if (value === null || value === undefined || value === '')
+            return defaultValue;
+        return value;
+    },
+    /**
+     * 日期函数
+     */
+    now: () => Date.now(),
+    date: (timestamp) => (timestamp !== undefined ? new Date(timestamp) : new Date()),
+    parseDate: (dateString) => new Date(dateString),
+    format: (date, format = 'yyyy-MM-dd HH:mm:ss') => {
+        const d = date instanceof Date ? date : new Date(date);
+        const pad = (n) => n.toString().padStart(2, '0');
+        return format
+            .replace(/yyyy/g, d.getFullYear().toString())
+            .replace(/yy/g, d.getFullYear().toString().slice(-2))
+            .replace(/MM/g, pad(d.getMonth() + 1))
+            .replace(/M/g, (d.getMonth() + 1).toString())
+            .replace(/dd/g, pad(d.getDate()))
+            .replace(/d/g, d.getDate().toString())
+            .replace(/HH/g, pad(d.getHours()))
+            .replace(/H/g, d.getHours().toString())
+            .replace(/hh/g, pad(d.getHours() % 12 || 12))
+            .replace(/h/g, (d.getHours() % 12 || 12).toString())
+            .replace(/mm/g, pad(d.getMinutes()))
+            .replace(/m/g, d.getMinutes().toString())
+            .replace(/ss/g, pad(d.getSeconds()))
+            .replace(/s/g, d.getSeconds().toString())
+            .replace(/SSS/g, d.getMilliseconds().toString().padStart(3, '0'));
+    },
+    year: (date) => new Date(date).getFullYear(),
+    month: (date) => new Date(date).getMonth() + 1,
+    day: (date) => new Date(date).getDate(),
+    hour: (date) => new Date(date).getHours(),
+    minute: (date) => new Date(date).getMinutes(),
+    second: (date) => new Date(date).getSeconds(),
+    dayOfWeek: (date) => new Date(date).getDay(),
+    addDays: (date, days) => {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    },
+    addMonths: (date, months) => {
+        const d = new Date(date);
+        d.setMonth(d.getMonth() + months);
+        return d;
+    },
+    addYears: (date, years) => {
+        const d = new Date(date);
+        d.setFullYear(d.getFullYear() + years);
+        return d;
+    },
+    daysBetween: (date1, date2) => {
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        const diffTime = Math.abs(d2.getTime() - d1.getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    },
+    /**
+     * 正则函数
+     */
+    regex: (pattern, flags) => new RegExp(pattern, flags),
+    test: (pattern, text) => {
+        const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
+        return regex.test(text);
+    },
+    match: (pattern, text) => {
+        const regex = typeof pattern === 'string'
+            ? new RegExp(pattern, 'g')
+            : new RegExp(pattern.source, pattern.flags + 'g');
+        return text.match(regex) || [];
+    },
+    matchAll: (pattern, text) => {
+        const regex = typeof pattern === 'string'
+            ? new RegExp(pattern, 'g')
+            : new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+        return [...text.matchAll(regex)];
+    },
+    /**
+     * JSON函数
+     */
+    json: (value, replacer, space) => JSON.stringify(value, replacer, space),
+    parseJson: (text) => JSON.parse(text),
+    /**
+     * 随机函数
+     */
+    random: () => Math.random(),
+    randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+    randomFloat: (min, max) => Math.random() * (max - min) + min,
+    randomPick: (arr) => arr[Math.floor(Math.random() * arr.length)],
+    shuffle: (arr) => {
+        const result = [...arr];
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+    },
+    uuid: () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    },
+    /**
+     * 打印函数
+     */
+    print: (...args) => {
+        console.log(...args.map(arg => formatValue(arg)));
+        return args.length === 1 ? args[0] : args;
+    },
+    println: (...args) => {
+        console.log(...args.map(arg => formatValue(arg)));
+        return args.length === 1 ? args[0] : args;
+    },
+    printf: (format, ...args) => {
+        console.log(format.replace(/%[sdifjo]/g, () => formatValue(args.shift())));
+        return undefined;
+    },
+    /**
+     * 集合操作
+     */
+    NewMap: (...entries) => new Map(entries),
+    NewSet: (...values) => new Set(values),
+    NewList: (...items) => [...items],
+    NewArray: (...items) => [...items],
+    /**
+     * 高阶函数
+     */
+    map: (arr, fn) => arr.map(fn),
+    filter: (arr, fn) => arr.filter(fn),
+    reduce: (arr, fn, initialValue) => initialValue !== undefined ? arr.reduce(fn, initialValue) : arr.reduce(fn),
+    find: (arr, fn) => arr.find(fn),
+    findIndex: (arr, fn) => arr.findIndex(fn),
+    every: (arr, fn) => arr.every(fn),
+    some: (arr, fn) => arr.some(fn),
+    forEach: (arr, fn) => {
+        arr.forEach(fn);
+        return arr;
+    },
+    sortArray: (arr, compareFn) => [...arr].sort(compareFn),
+    groupBy: (arr, keyFn) => {
+        return arr.reduce((groups, item) => {
+            const key = keyFn(item);
+            if (!groups[key])
+                groups[key] = [];
+            groups[key].push(item);
+            return groups;
+        }, {});
+    },
+    countBy: (arr, keyFn) => {
+        return arr.reduce((counts, item) => {
+            const key = keyFn(item);
+            counts[key] = (counts[key] || 0) + 1;
+            return counts;
+        }, {});
+    },
+    distinctBy: (arr, keyFn) => {
+        const seen = new Set();
+        return arr.filter(item => {
+            const key = keyFn(item);
+            if (seen.has(key))
+                return false;
+            seen.add(key);
+            return true;
+        });
+    },
+};
+
+/**
  * Token类型枚举
  */
 var TokenType;
@@ -13,6 +391,7 @@ var TokenType;
     TokenType["BOOLEAN"] = "BOOLEAN";
     TokenType["NULL"] = "NULL";
     TokenType["IDENTIFIER"] = "IDENTIFIER";
+    TokenType["PLACEHOLDER"] = "PLACEHOLDER";
     // 关键字
     TokenType["IF"] = "IF";
     TokenType["THEN"] = "THEN";
@@ -113,9 +492,7 @@ class ParseError extends Error {
  */
 class RuntimeError extends Error {
     constructor(message, line, column) {
-        const location = (line !== undefined && column !== undefined)
-            ? ` at line ${line}, column ${column}`
-            : '';
+        const location = line !== undefined && column !== undefined ? ` at line ${line}, column ${column}` : '';
         super(`Runtime Error${location}: ${message}`);
         this.line = line;
         this.column = column;
@@ -144,6 +521,7 @@ var NodeType;
     NodeType["NullLiteral"] = "NullLiteral";
     // 标识符
     NodeType["Identifier"] = "Identifier";
+    NodeType["Placeholder"] = "Placeholder";
     // 数组和对象
     NodeType["ArrayExpression"] = "ArrayExpression";
     NodeType["ObjectExpression"] = "ObjectExpression";
@@ -227,28 +605,28 @@ class ReturnException extends ControlFlow {
  * 关键字映射
  */
 const KEYWORDS = {
-    'if': TokenType.IF,
-    'then': TokenType.THEN,
-    'else': TokenType.ELSE,
-    'for': TokenType.FOR,
-    'while': TokenType.WHILE,
-    'break': TokenType.BREAK,
-    'continue': TokenType.CONTINUE,
-    'return': TokenType.RETURN,
-    'function': TokenType.FUNCTION,
-    'import': TokenType.IMPORT,
-    'new': TokenType.NEW,
-    'in': TokenType.IN,
-    'like': TokenType.LIKE,
-    'between': TokenType.BETWEEN,
-    'and': TokenType.AND,
-    'or': TokenType.OR,
-    'not': TokenType.NOT,
-    'mod': TokenType.MOD,
-    'true': TokenType.BOOLEAN,
-    'false': TokenType.BOOLEAN,
-    'null': TokenType.NULL,
-    'undefined': TokenType.NULL // undefined 也作为 null 类型处理
+    if: TokenType.IF,
+    then: TokenType.THEN,
+    else: TokenType.ELSE,
+    for: TokenType.FOR,
+    while: TokenType.WHILE,
+    break: TokenType.BREAK,
+    continue: TokenType.CONTINUE,
+    return: TokenType.RETURN,
+    function: TokenType.FUNCTION,
+    import: TokenType.IMPORT,
+    new: TokenType.NEW,
+    in: TokenType.IN,
+    like: TokenType.LIKE,
+    between: TokenType.BETWEEN,
+    and: TokenType.AND,
+    or: TokenType.OR,
+    not: TokenType.NOT,
+    mod: TokenType.MOD,
+    true: TokenType.BOOLEAN,
+    false: TokenType.BOOLEAN,
+    null: TokenType.NULL,
+    undefined: TokenType.NULL, // undefined 也作为 null 类型处理
 };
 /**
  * 操作符字符映射
@@ -277,7 +655,7 @@ const OPERATORS = {
     ']': TokenType.RBRACKET,
     ',': TokenType.COMMA,
     ';': TokenType.SEMICOLON,
-    '.': TokenType.DOT
+    '.': TokenType.DOT,
 };
 /**
  * 词法分析器
@@ -332,6 +710,11 @@ class Lexer {
         // 字符串处理
         if (char === '"' || char === "'" || char === '`') {
             this.scanString(char);
+            return;
+        }
+        // 占位符处理：${...}
+        if (char === '$' && this.peek() === '{') {
+            this.scanPlaceholder();
             return;
         }
         // 标识符和关键字处理
@@ -674,6 +1057,57 @@ class Lexer {
         this.addToken(TokenType.STRING, value, raw);
     }
     /**
+     * 扫描占位符：${placeholder}
+     */
+    scanPlaceholder() {
+        // 此时 '$' 已经被 scanToken 消费，当前字符应该是 '{'
+        if (this.peek() !== '{') {
+            // 如果不是 '{'，则 '$' 是普通标识符的一部分
+            // 回退到 scanIdentifier 逻辑
+            this.current = this.start; // 回退到 '$' 的位置
+            this.scanIdentifier();
+            return;
+        }
+        // 消费 '{'
+        this.advance();
+        const start = this.current;
+        let braceCount = 1;
+        // 处理嵌套的大括号
+        while (!this.isAtEnd() && braceCount > 0) {
+            const char = this.peek();
+            if (char === '{') {
+                braceCount++;
+                this.advance();
+            }
+            else if (char === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                    break;
+                }
+                this.advance();
+            }
+            else if (char === '\n') {
+                this.line++;
+                this.column = 0;
+                this.advance();
+            }
+            else {
+                this.advance();
+            }
+        }
+        if (braceCount > 0) {
+            throw new LexerError('Unterminated placeholder', this.line, this.column);
+        }
+        // 获取占位符内容（不包括最后的 '}'）
+        const content = this.source.slice(start, this.current).trim();
+        this.advance(); // 消费最后的 '}'
+        // 占位符内容应该是标识符（变量名）
+        if (!this.isValidIdentifier(content)) {
+            throw new LexerError(`Invalid placeholder name: ${content}`, this.line, this.column);
+        }
+        this.addToken(TokenType.PLACEHOLDER, content);
+    }
+    /**
      * 扫描标识符
      */
     scanIdentifier() {
@@ -722,6 +1156,24 @@ class Lexer {
         while (!this.isAtEnd() && this.peek() !== '\n') {
             this.advance();
         }
+    }
+    /**
+     * 辅助方法：检查是否为有效标识符
+     */
+    isValidIdentifier(text) {
+        if (text.length === 0)
+            return false;
+        const firstChar = text[0];
+        if (!this.isAlpha(firstChar) && firstChar !== '_' && firstChar !== '$') {
+            return false;
+        }
+        for (let i = 1; i < text.length; i++) {
+            const char = text[i];
+            if (!this.isAlpha(char) && !this.isDigit(char) && char !== '_' && char !== '$') {
+                return false;
+            }
+        }
+        return true;
     }
     /**
      * 辅助方法：前进一个字符
@@ -781,9 +1233,7 @@ class Lexer {
      * 辅助方法：是否为十六进制数字
      */
     isHexDigit(char) {
-        return ((char >= '0' && char <= '9') ||
-            (char >= 'a' && char <= 'f') ||
-            (char >= 'A' && char <= 'F'));
+        return ((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F'));
     }
     /**
      * 辅助方法：是否为八进制数字
@@ -815,8 +1265,164 @@ class Lexer {
             value,
             line: this.line,
             column: this.startColumn,
-            raw: raw !== undefined ? raw : String(value)
+            raw: raw !== undefined ? raw : String(value),
         });
+    }
+}
+
+/**
+ * 宏管理器
+ * 管理宏定义和展开
+ */
+class MacroManager {
+    constructor() {
+        this.macros = new Map();
+    }
+    /**
+     * 添加宏定义
+     */
+    add(name, expression) {
+        this.macros.set(name, { name, expression });
+    }
+    /**
+     * 移除宏定义
+     */
+    remove(name) {
+        return this.macros.delete(name);
+    }
+    /**
+     * 检查宏是否存在
+     */
+    has(name) {
+        return this.macros.has(name);
+    }
+    /**
+     * 获取宏表达式
+     */
+    get(name) {
+        return this.macros.get(name)?.expression;
+    }
+    /**
+     * 获取所有宏
+     */
+    getAll() {
+        return new Map(this.macros);
+    }
+    /**
+     * 清空所有宏
+     */
+    clear() {
+        this.macros.clear();
+    }
+}
+/**
+ * 自定义函数管理器
+ */
+class CustomFunctionManager {
+    constructor() {
+        this.functions = new Map();
+    }
+    /**
+     * 添加自定义函数
+     */
+    add(name, handler, description) {
+        this.functions.set(name, { name, handler, description });
+    }
+    /**
+     * 移除自定义函数
+     */
+    remove(name) {
+        return this.functions.delete(name);
+    }
+    /**
+     * 检查函数是否存在
+     */
+    has(name) {
+        return this.functions.has(name);
+    }
+    /**
+     * 获取函数
+     */
+    get(name) {
+        return this.functions.get(name);
+    }
+    /**
+     * 获取所有函数
+     */
+    getAll() {
+        return new Map(this.functions);
+    }
+    /**
+     * 清空所有函数
+     */
+    clear() {
+        this.functions.clear();
+    }
+}
+/**
+ * 自定义操作符管理器
+ */
+class CustomOperatorManager {
+    constructor() {
+        this.operators = new Map();
+        this.aliases = new Map();
+    }
+    /**
+     * 添加自定义操作符
+     */
+    add(name, handler, precedence) {
+        this.operators.set(name, { name, handler, precedence });
+    }
+    /**
+     * 添加操作符别名
+     */
+    addAlias(alias, originalName) {
+        this.aliases.set(alias, originalName);
+    }
+    /**
+     * 移除自定义操作符
+     */
+    remove(name) {
+        return this.operators.delete(name);
+    }
+    /**
+     * 检查操作符是否存在
+     */
+    has(name) {
+        const resolvedName = this.resolveAlias(name);
+        return this.operators.has(resolvedName);
+    }
+    /**
+     * 获取操作符
+     */
+    get(name) {
+        const resolvedName = this.resolveAlias(name);
+        return this.operators.get(resolvedName);
+    }
+    /**
+     * 解析别名
+     */
+    resolveAlias(name) {
+        return this.aliases.get(name) || name;
+    }
+    /**
+     * 获取所有操作符
+     */
+    getAll() {
+        return new Map(this.operators);
+    }
+    /**
+     * 获取所有别名
+     */
+    getAllAliases() {
+        return new Map(this.aliases);
+    }
+    /**
+     * 清空所有操作符
+     */
+    clear() {
+        this.operators.clear();
+        this.aliases.clear();
     }
 }
 
@@ -849,7 +1455,7 @@ class Parser {
         }
         return {
             type: NodeType.Program,
-            body
+            body,
         };
     }
     /**
@@ -894,12 +1500,13 @@ class Parser {
                 // 检查变量声明（标识符后跟赋值操作）
                 if (this.check(TokenType.IDENTIFIER)) {
                     const nextToken = this.peekNext();
-                    if (nextToken && (nextToken.type === TokenType.ASSIGN ||
-                        nextToken.type === TokenType.PLUS_ASSIGN ||
-                        nextToken.type === TokenType.MINUS_ASSIGN ||
-                        nextToken.type === TokenType.STAR_ASSIGN ||
-                        nextToken.type === TokenType.SLASH_ASSIGN ||
-                        nextToken.type === TokenType.PERCENT_ASSIGN)) {
+                    if (nextToken &&
+                        (nextToken.type === TokenType.ASSIGN ||
+                            nextToken.type === TokenType.PLUS_ASSIGN ||
+                            nextToken.type === TokenType.MINUS_ASSIGN ||
+                            nextToken.type === TokenType.STAR_ASSIGN ||
+                            nextToken.type === TokenType.SLASH_ASSIGN ||
+                            nextToken.type === TokenType.PERCENT_ASSIGN)) {
                         return this.parseExpressionStatement();
                     }
                 }
@@ -941,7 +1548,7 @@ class Parser {
             test,
             consequent,
             alternate,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -979,7 +1586,7 @@ class Parser {
             test,
             update,
             body,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -999,7 +1606,7 @@ class Parser {
             type: NodeType.WhileStatement,
             test,
             body,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1008,7 +1615,10 @@ class Parser {
     parseReturnStatement() {
         const token = this.advance(); // 消费 'return'
         let argument = null;
-        if (!this.check(TokenType.SEMICOLON) && !this.check(TokenType.NEWLINE) && !this.check(TokenType.RBRACE) && !this.isAtEnd()) {
+        if (!this.check(TokenType.SEMICOLON) &&
+            !this.check(TokenType.NEWLINE) &&
+            !this.check(TokenType.RBRACE) &&
+            !this.isAtEnd()) {
             argument = this.parseExpression();
         }
         // 消费可选的分号
@@ -1018,7 +1628,7 @@ class Parser {
         return {
             type: NodeType.ReturnStatement,
             argument,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1032,7 +1642,7 @@ class Parser {
         }
         return {
             type: NodeType.BreakStatement,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1046,7 +1656,7 @@ class Parser {
         }
         return {
             type: NodeType.ContinueStatement,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1054,14 +1664,22 @@ class Parser {
      */
     parseFunctionDeclaration() {
         const token = this.advance(); // 消费 'function'
-        const nameToken = this.consume(TokenType.IDENTIFIER, "Expect function name");
-        const name = { type: NodeType.Identifier, name: nameToken.value, loc: this.createLocation(nameToken) };
+        const nameToken = this.consume(TokenType.IDENTIFIER, 'Expect function name');
+        const name = {
+            type: NodeType.Identifier,
+            name: nameToken.value,
+            loc: this.createLocation(nameToken),
+        };
         this.consume(TokenType.LPAREN, "Expect '(' after function name");
         const params = [];
         if (!this.check(TokenType.RPAREN)) {
             do {
-                const paramToken = this.consume(TokenType.IDENTIFIER, "Expect parameter name");
-                params.push({ type: NodeType.Identifier, name: paramToken.value, loc: this.createLocation(paramToken) });
+                const paramToken = this.consume(TokenType.IDENTIFIER, 'Expect parameter name');
+                params.push({
+                    type: NodeType.Identifier,
+                    name: paramToken.value,
+                    loc: this.createLocation(paramToken),
+                });
             } while (this.match(TokenType.COMMA));
         }
         this.consume(TokenType.RPAREN, "Expect ')' after parameters");
@@ -1075,7 +1693,7 @@ class Parser {
             id: name,
             params,
             body,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1087,7 +1705,7 @@ class Parser {
         return {
             type: NodeType.ImportStatement,
             source,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1112,7 +1730,7 @@ class Parser {
         return {
             type: NodeType.BlockStatement,
             body,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1126,7 +1744,7 @@ class Parser {
         }
         return {
             type: NodeType.ExpressionStatement,
-            expression: expr
+            expression: expr,
         };
     }
     /**
@@ -1153,7 +1771,7 @@ class Parser {
                 operator,
                 left: expr,
                 right: value,
-                loc: this.createLocation(expr)
+                loc: this.createLocation(expr),
             };
         }
         return expr;
@@ -1173,7 +1791,7 @@ class Parser {
                 test: expr,
                 consequent,
                 alternate,
-                loc: this.createLocation(expr)
+                loc: this.createLocation(expr),
             };
         }
         // 检查箭头函数
@@ -1195,7 +1813,7 @@ class Parser {
                 operator: operator === 'or' ? '||' : operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1213,7 +1831,7 @@ class Parser {
                 operator: operator === 'and' ? '&&' : operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1231,7 +1849,7 @@ class Parser {
                 operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1249,7 +1867,7 @@ class Parser {
                 operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1267,7 +1885,7 @@ class Parser {
                 operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1285,7 +1903,7 @@ class Parser {
                 operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1295,9 +1913,13 @@ class Parser {
      */
     parseComparison() {
         let left = this.parseShift();
-        while (this.match(TokenType.LT) || this.match(TokenType.GT) ||
-            this.match(TokenType.LTE) || this.match(TokenType.GTE) ||
-            this.match(TokenType.IN) || this.match(TokenType.LIKE) || this.match(TokenType.BETWEEN)) {
+        while (this.match(TokenType.LT) ||
+            this.match(TokenType.GT) ||
+            this.match(TokenType.LTE) ||
+            this.match(TokenType.GTE) ||
+            this.match(TokenType.IN) ||
+            this.match(TokenType.LIKE) ||
+            this.match(TokenType.BETWEEN)) {
             const operator = this.previous().type;
             if (operator === TokenType.IN) {
                 const right = this.parseShift();
@@ -1305,7 +1927,7 @@ class Parser {
                     type: NodeType.InExpression,
                     element: left,
                     container: right,
-                    loc: this.createLocation(left)
+                    loc: this.createLocation(left),
                 };
             }
             else if (operator === TokenType.LIKE) {
@@ -1314,7 +1936,7 @@ class Parser {
                     type: NodeType.LikeExpression,
                     value: left,
                     pattern: right,
-                    loc: this.createLocation(left)
+                    loc: this.createLocation(left),
                 };
             }
             else if (operator === TokenType.BETWEEN) {
@@ -1326,7 +1948,7 @@ class Parser {
                     value: left,
                     low,
                     high,
-                    loc: this.createLocation(left)
+                    loc: this.createLocation(left),
                 };
             }
             else {
@@ -1337,7 +1959,7 @@ class Parser {
                     operator: op,
                     left,
                     right,
-                    loc: this.createLocation(left)
+                    loc: this.createLocation(left),
                 };
             }
         }
@@ -1348,7 +1970,9 @@ class Parser {
      */
     parseShift() {
         let left = this.parseAdditive();
-        while (this.match(TokenType.LSHIFT) || this.match(TokenType.RSHIFT) || this.match(TokenType.URSHIFT)) {
+        while (this.match(TokenType.LSHIFT) ||
+            this.match(TokenType.RSHIFT) ||
+            this.match(TokenType.URSHIFT)) {
             const operator = this.previous().value;
             const right = this.parseAdditive();
             left = {
@@ -1356,7 +1980,7 @@ class Parser {
                 operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1374,7 +1998,7 @@ class Parser {
                 operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1384,8 +2008,10 @@ class Parser {
      */
     parseMultiplicative() {
         let left = this.parseUnary();
-        while (this.match(TokenType.STAR) || this.match(TokenType.SLASH) ||
-            this.match(TokenType.PERCENT) || this.match(TokenType.MOD)) {
+        while (this.match(TokenType.STAR) ||
+            this.match(TokenType.SLASH) ||
+            this.match(TokenType.PERCENT) ||
+            this.match(TokenType.MOD)) {
             const operator = this.previous().value;
             const right = this.parseUnary();
             left = {
@@ -1393,7 +2019,7 @@ class Parser {
                 operator: operator === 'mod' ? '%' : operator,
                 left,
                 right,
-                loc: this.createLocation(left)
+                loc: this.createLocation(left),
             };
         }
         return left;
@@ -1402,8 +2028,10 @@ class Parser {
      * 解析一元表达式
      */
     parseUnary() {
-        if (this.match(TokenType.NOT_OP) || this.match(TokenType.NOT) ||
-            this.match(TokenType.MINUS) || this.match(TokenType.BIT_NOT)) {
+        if (this.match(TokenType.NOT_OP) ||
+            this.match(TokenType.NOT) ||
+            this.match(TokenType.MINUS) ||
+            this.match(TokenType.BIT_NOT)) {
             const operator = this.previous().value;
             const argument = this.parseUnary();
             return {
@@ -1411,7 +2039,7 @@ class Parser {
                 operator: operator === 'not' ? '!' : operator,
                 argument,
                 prefix: true,
-                loc: this.createLocation(this.previous())
+                loc: this.createLocation(this.previous()),
             };
         }
         if (this.match(TokenType.INCREMENT) || this.match(TokenType.DECREMENT)) {
@@ -1422,7 +2050,7 @@ class Parser {
                 operator,
                 argument,
                 prefix: true,
-                loc: this.createLocation(this.previous())
+                loc: this.createLocation(this.previous()),
             };
         }
         return this.parsePostfix();
@@ -1440,7 +2068,7 @@ class Parser {
                 operator,
                 argument: expr,
                 prefix: false,
-                loc: this.createLocation(expr)
+                loc: this.createLocation(expr),
             };
         }
         return expr;
@@ -1456,13 +2084,17 @@ class Parser {
             }
             else if (this.match(TokenType.DOT)) {
                 const nameToken = this.consume(TokenType.IDENTIFIER, "Expect property name after '.'");
-                const name = { type: NodeType.Identifier, name: nameToken.value, loc: this.createLocation(nameToken) };
+                const name = {
+                    type: NodeType.Identifier,
+                    name: nameToken.value,
+                    loc: this.createLocation(nameToken),
+                };
                 expr = {
                     type: NodeType.MemberExpression,
                     object: expr,
                     property: name,
                     computed: false,
-                    loc: this.createLocation(expr)
+                    loc: this.createLocation(expr),
                 };
             }
             else if (this.match(TokenType.LBRACKET)) {
@@ -1473,7 +2105,7 @@ class Parser {
                     object: expr,
                     property,
                     computed: true,
-                    loc: this.createLocation(expr)
+                    loc: this.createLocation(expr),
                 };
             }
             else {
@@ -1497,7 +2129,7 @@ class Parser {
             type: NodeType.CallExpression,
             callee,
             arguments: args,
-            loc: this.createLocation(callee)
+            loc: this.createLocation(callee),
         };
     }
     /**
@@ -1511,35 +2143,42 @@ class Parser {
                 return {
                     type: NodeType.NumberLiteral,
                     value: token.value,
-                    loc: this.createLocation(token)
+                    loc: this.createLocation(token),
                 };
             case TokenType.STRING:
                 this.advance();
                 return {
                     type: NodeType.StringLiteral,
                     value: token.value,
-                    loc: this.createLocation(token)
+                    loc: this.createLocation(token),
                 };
             case TokenType.BOOLEAN:
                 this.advance();
                 return {
                     type: NodeType.BooleanLiteral,
                     value: token.value,
-                    loc: this.createLocation(token)
+                    loc: this.createLocation(token),
                 };
             case TokenType.NULL:
                 this.advance();
                 return {
                     type: NodeType.NullLiteral,
                     value: token.value, // 使用token的value（可能是null或undefined）
-                    loc: this.createLocation(token)
+                    loc: this.createLocation(token),
                 };
             case TokenType.IDENTIFIER:
                 this.advance();
                 return {
                     type: NodeType.Identifier,
                     name: token.value,
-                    loc: this.createLocation(token)
+                    loc: this.createLocation(token),
+                };
+            case TokenType.PLACEHOLDER:
+                this.advance();
+                return {
+                    type: NodeType.Placeholder,
+                    name: token.value,
+                    loc: this.createLocation(token),
                 };
             case TokenType.NEW:
                 return this.parseNewExpression();
@@ -1565,7 +2204,7 @@ class Parser {
                                 operator: ',',
                                 left: result,
                                 right: params[i],
-                                loc: result.loc
+                                loc: result.loc,
                             };
                         }
                         return result;
@@ -1606,7 +2245,7 @@ class Parser {
             type: NodeType.NewExpression,
             callee,
             arguments: args,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1666,11 +2305,11 @@ class Parser {
             while (this.check(TokenType.NEWLINE)) {
                 this.advance();
             }
-            const paramToken = this.consume(TokenType.IDENTIFIER, "Expect parameter name");
+            const paramToken = this.consume(TokenType.IDENTIFIER, 'Expect parameter name');
             params.push({
                 type: NodeType.Identifier,
                 name: paramToken.value,
-                loc: this.createLocation(paramToken)
+                loc: this.createLocation(paramToken),
             });
             // 跳过换行
             while (this.check(TokenType.NEWLINE)) {
@@ -1697,7 +2336,7 @@ class Parser {
             type: NodeType.ArrowFunctionExpression,
             params,
             body,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1743,7 +2382,7 @@ class Parser {
             type: NodeType.ArrowFunctionExpression,
             params,
             body,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1761,7 +2400,7 @@ class Parser {
         return {
             type: NodeType.ArrayExpression,
             elements,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     /**
@@ -1788,21 +2427,21 @@ class Parser {
                     key = {
                         type: NodeType.Identifier,
                         name: this.advance().value,
-                        loc: this.createLocation(this.previous())
+                        loc: this.createLocation(this.previous()),
                     };
                 }
                 else if (this.check(TokenType.STRING)) {
                     key = {
                         type: NodeType.StringLiteral,
                         value: this.advance().value,
-                        loc: this.createLocation(this.previous())
+                        loc: this.createLocation(this.previous()),
                     };
                 }
                 else if (this.check(TokenType.NUMBER)) {
                     key = {
                         type: NodeType.NumberLiteral,
                         value: this.advance().value,
-                        loc: this.createLocation(this.previous())
+                        loc: this.createLocation(this.previous()),
                     };
                 }
                 else {
@@ -1817,7 +2456,7 @@ class Parser {
         return {
             type: NodeType.ObjectExpression,
             properties,
-            loc: this.createLocation(token)
+            loc: this.createLocation(token),
         };
     }
     // ============ 辅助方法 ============
@@ -1858,7 +2497,8 @@ class Parser {
      * 检查并跳过换行符
      */
     skipNewlines() {
-        while (this.current < this.tokens.length && this.tokens[this.current].type === TokenType.NEWLINE) {
+        while (this.current < this.tokens.length &&
+            this.tokens[this.current].type === TokenType.NEWLINE) {
             this.current++;
         }
     }
@@ -1911,7 +2551,7 @@ class Parser {
         if ('line' in start) {
             return {
                 start: { line: start.line, column: start.column },
-                end: { line: this.previous().line, column: this.previous().column }
+                end: { line: this.previous().line, column: this.previous().column },
             };
         }
         return start.loc;
@@ -2136,7 +2776,7 @@ class BuiltinObjects {
             Error: BuiltinObjects.Error,
             Map: BuiltinObjects.Map,
             Set: BuiltinObjects.Set,
-            Promise: BuiltinObjects.Promise
+            Promise: BuiltinObjects.Promise,
         };
     }
 }
@@ -2171,14 +2811,14 @@ BuiltinObjects.Math = {
     LOG2E: Math.LOG2E,
     LOG10E: Math.LOG10E,
     SQRT2: Math.SQRT2,
-    SQRT1_2: Math.SQRT1_2
+    SQRT1_2: Math.SQRT1_2,
 };
 /**
  * JSON对象
  */
 BuiltinObjects.JSON = {
     parse: JSON.parse,
-    stringify: JSON.stringify
+    stringify: JSON.stringify,
 };
 /**
  * Array对象
@@ -2194,14 +2834,14 @@ BuiltinObjects.Object = {
     assign: Object.assign,
     create: Object.create,
     freeze: Object.freeze,
-    fromEntries: Object.fromEntries
+    fromEntries: Object.fromEntries,
 };
 /**
  * String对象
  */
 BuiltinObjects.String = {
     fromCharCode: String.fromCharCode,
-    fromCodePoint: String.fromCodePoint
+    fromCodePoint: String.fromCodePoint,
 };
 /**
  * Number对象
@@ -2215,7 +2855,7 @@ BuiltinObjects.Number = {
     MAX_VALUE: Number.MAX_VALUE,
     MIN_VALUE: Number.MIN_VALUE,
     POSITIVE_INFINITY: Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY: Number.NEGATIVE_INFINITY
+    NEGATIVE_INFINITY: Number.NEGATIVE_INFINITY,
 };
 /**
  * Date对象
@@ -2271,8 +2911,8 @@ class Interpreter {
                 maxArrayLength: config.security?.maxArrayLength ?? 100000,
                 forbidRiskMethods: config.security?.forbidRiskMethods ?? true,
                 riskMethodBlacklist: config.security?.riskMethodBlacklist ?? [],
-                allowedMethods: config.security?.allowedMethods ?? null
-            }
+                allowedMethods: config.security?.allowedMethods ?? null,
+            },
         };
     }
     /**
@@ -2287,7 +2927,7 @@ class Interpreter {
             return {
                 value: value instanceof ReturnValue ? value.value : value,
                 variables: this.context.toObject(),
-                trace: this.config.trace ? this.traces : undefined
+                trace: this.config.trace ? this.traces : undefined,
             };
         }
         catch (error) {
@@ -2301,7 +2941,7 @@ class Interpreter {
                 return {
                     value: error.value,
                     variables: this.context.toObject(),
-                    trace: this.config.trace ? this.traces : undefined
+                    trace: this.config.trace ? this.traces : undefined,
                 };
             }
             throw error;
@@ -2353,7 +2993,7 @@ class Interpreter {
             this.traces.push({
                 node,
                 action,
-                result
+                result,
             });
         }
     }
@@ -2374,6 +3014,13 @@ class Interpreter {
                 return node.value;
             case NodeType.Identifier:
                 return this.evaluateIdentifier(node);
+            case NodeType.Placeholder:
+                // 占位符的行为与标识符相同，直接复用 evaluateIdentifier 逻辑
+                return this.evaluateIdentifier({
+                    type: NodeType.Identifier,
+                    name: node.name,
+                    loc: node.loc,
+                });
             case NodeType.ArrayExpression:
                 return this.evaluateArrayExpression(node);
             case NodeType.ObjectExpression:
@@ -2527,12 +3174,13 @@ class Interpreter {
                 return this.toNumber(left) - this.toNumber(right);
             case '*':
                 return this.toNumber(left) * this.toNumber(right);
-            case '/':
+            case '/': {
                 const divisor = this.toNumber(right);
                 if (divisor === 0) {
                     throw new RuntimeError('Division by zero');
                 }
                 return this.toNumber(left) / divisor;
+            }
             case '%':
                 return this.toNumber(left) % this.toNumber(right);
             case '==':
@@ -2604,33 +3252,38 @@ class Interpreter {
                 case '=':
                     this.context.set(name, value);
                     return value;
-                case '+=':
+                case '+=': {
                     const currentAdd = this.context.get(name) ?? 0;
                     const resultAdd = typeof currentAdd === 'string' || typeof value === 'string'
                         ? String(currentAdd) + String(value)
                         : this.toNumber(currentAdd) + this.toNumber(value);
                     this.context.set(name, resultAdd);
                     return resultAdd;
-                case '-=':
+                }
+                case '-=': {
                     const currentSub = this.toNumber(this.context.get(name) ?? 0);
                     const resultSub = currentSub - this.toNumber(value);
                     this.context.set(name, resultSub);
                     return resultSub;
-                case '*=':
+                }
+                case '*=': {
                     const currentMul = this.toNumber(this.context.get(name) ?? 0);
                     const resultMul = currentMul * this.toNumber(value);
                     this.context.set(name, resultMul);
                     return resultMul;
-                case '/=':
+                }
+                case '/=': {
                     const currentDiv = this.toNumber(this.context.get(name) ?? 0);
                     const resultDiv = currentDiv / this.toNumber(value);
                     this.context.set(name, resultDiv);
                     return resultDiv;
-                case '%=':
+                }
+                case '%=': {
                     const currentMod = this.toNumber(this.context.get(name) ?? 0);
                     const resultMod = currentMod % this.toNumber(value);
                     this.context.set(name, resultMod);
                     return resultMod;
+                }
                 default:
                     throw new RuntimeError(`Unknown assignment operator: ${node.operator}`);
             }
@@ -2645,21 +3298,26 @@ class Interpreter {
                 case '=':
                     object[property] = value;
                     return value;
-                case '+=':
+                case '+=': {
                     object[property] = (object[property] ?? 0) + value;
                     return object[property];
-                case '-=':
+                }
+                case '-=': {
                     object[property] = (object[property] ?? 0) - value;
                     return object[property];
-                case '*=':
+                }
+                case '*=': {
                     object[property] = (object[property] ?? 0) * value;
                     return object[property];
-                case '/=':
+                }
+                case '/=': {
                     object[property] = (object[property] ?? 0) / value;
                     return object[property];
-                case '%=':
+                }
+                case '%=': {
                     object[property] = (object[property] ?? 0) % value;
                     return object[property];
+                }
                 default:
                     throw new RuntimeError(`Unknown assignment operator: ${node.operator}`);
             }
@@ -2718,7 +3376,9 @@ class Interpreter {
                 return (key) => object.get(key);
             }
             if (property === 'set') {
-                return (key, value) => { object.set(key, value); };
+                return (key, value) => {
+                    object.set(key, value);
+                };
             }
             if (property === 'has') {
                 return (key) => object.has(key);
@@ -2736,7 +3396,9 @@ class Interpreter {
                 return (value) => object.has(value);
             }
             if (property === 'add') {
-                return (value) => { object.add(value); };
+                return (value) => {
+                    object.add(value);
+                };
             }
             if (property === 'delete') {
                 return (value) => object.delete(value);
@@ -3026,7 +3688,7 @@ class Interpreter {
             name: node.id.name,
             params: node.params.map(p => p.name),
             body: node.body,
-            closure: this.context.getCurrentScope()
+            closure: this.context.getCurrentScope(),
         };
         this.userFunctions.set(func.name, func);
         this.context.define(func.name, func);
@@ -3063,18 +3725,18 @@ class Interpreter {
     isEqual(left, right) {
         // 同类型直接比较
         if (typeof left === typeof right) {
-            return left === right;
+            return Object.is(left, right);
         }
         // null 和 undefined 相等
-        if (left == null && right == null) {
+        if ((left === null || left === undefined) && (right === null || right === undefined)) {
             return true;
         }
         // 数字和字符串比较
         if (typeof left === 'number' && typeof right === 'string') {
-            return left === parseFloat(right);
+            return Object.is(left, parseFloat(right));
         }
         if (typeof left === 'string' && typeof right === 'number') {
-            return parseFloat(left) === right;
+            return Object.is(parseFloat(left), right);
         }
         // 布尔值转换
         if (typeof left === 'boolean') {
@@ -3083,380 +3745,9 @@ class Interpreter {
         if (typeof right === 'boolean') {
             return this.isEqual(left, right ? 1 : 0);
         }
-        return left == right;
+        // 其他情况使用Object.is
+        return Object.is(left, right);
     }
-}
-
-/**
- * 内置函数集合
- */
-const builtinFunctions = {
-    /**
-     * 数学函数
-     */
-    abs: (x) => Math.abs(x),
-    ceil: (x) => Math.ceil(x),
-    floor: (x) => Math.floor(x),
-    round: (x) => Math.round(x),
-    sqrt: (x) => Math.sqrt(x),
-    pow: (x, y) => Math.pow(x, y),
-    exp: (x) => Math.exp(x),
-    log: (x) => Math.log(x),
-    log10: (x) => Math.log10(x),
-    log2: (x) => Math.log2(x),
-    /**
-     * 三角函数
-     */
-    sin: (x) => Math.sin(x),
-    cos: (x) => Math.cos(x),
-    tan: (x) => Math.tan(x),
-    asin: (x) => Math.asin(x),
-    acos: (x) => Math.acos(x),
-    atan: (x) => Math.atan(x),
-    atan2: (y, x) => Math.atan2(y, x),
-    /**
-     * 聚合函数
-     */
-    min: (...args) => Math.min(...args),
-    max: (...args) => Math.max(...args),
-    sum: (...args) => args.reduce((a, b) => a + b, 0),
-    avg: (...args) => {
-        if (args.length === 0)
-            return 0;
-        return args.reduce((a, b) => a + b, 0) / args.length;
-    },
-    /**
-     * 类型转换函数
-     */
-    parseInt: (s, radix) => parseInt(s, radix || 10),
-    parseFloat: (s) => parseFloat(s),
-    toString: (value) => String(value),
-    toNumber: (value) => {
-        if (typeof value === 'number')
-            return value;
-        if (typeof value === 'string')
-            return parseFloat(value);
-        if (typeof value === 'boolean')
-            return value ? 1 : 0;
-        return 0;
-    },
-    toBoolean: (value) => Boolean(value),
-    /**
-     * 类型检查函数
-     */
-    isNaN: (value) => Number.isNaN(value),
-    isFinite: (value) => Number.isFinite(value),
-    isInteger: (value) => Number.isInteger(value),
-    isArray: (value) => Array.isArray(value),
-    isObject: (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
-    isString: (value) => typeof value === 'string',
-    isNumber: (value) => typeof value === 'number',
-    isBoolean: (value) => typeof value === 'boolean',
-    isFunction: (value) => typeof value === 'function',
-    isNull: (value) => value === null,
-    isUndefined: (value) => value === undefined,
-    isEmpty: (value) => {
-        if (value == null)
-            return true;
-        if (typeof value === 'string')
-            return value.length === 0;
-        if (Array.isArray(value))
-            return value.length === 0;
-        if (value instanceof Map || value instanceof Set)
-            return value.size === 0;
-        if (typeof value === 'object')
-            return Object.keys(value).length === 0;
-        return false;
-    },
-    /**
-     * 字符串函数
-     */
-    strlen: (s) => s.length,
-    strlenb: (s) => {
-        // 使用TextEncoder代替Buffer
-        try {
-            return new TextEncoder().encode(s).length;
-        }
-        catch {
-            return s.length;
-        }
-    },
-    substr: (s, start, length) => s.substr(start, length),
-    substring: (s, start, end) => s.substring(start, end),
-    indexOf: (s, search, position) => s.indexOf(search, position),
-    lastIndexOf: (s, search, position) => s.lastIndexOf(search, position),
-    replace: (s, search, replace) => s.replace(search, replace),
-    replaceAll: (s, search, replace) => s.split(search).join(replace),
-    trim: (s) => s.trim(),
-    trimLeft: (s) => s.trimStart(),
-    trimRight: (s) => s.trimEnd(),
-    toUpperCase: (s) => s.toUpperCase(),
-    toLowerCase: (s) => s.toLowerCase(),
-    capitalize: (s) => s.charAt(0).toUpperCase() + s.slice(1),
-    split: (s, separator, limit) => s.split(separator, limit),
-    join: (arr, separator = ',') => arr.join(separator),
-    charAt: (s, index) => s.charAt(index),
-    charCodeAt: (s, index) => s.charCodeAt(index),
-    startsWith: (s, search, position) => s.startsWith(search, position),
-    endsWith: (s, search, endPosition) => s.endsWith(search, endPosition),
-    includes: (s, search, position) => s.includes(search, position),
-    repeat: (s, count) => s.repeat(count),
-    padLeft: (s, length, char = ' ') => s.padStart(length, char),
-    padRight: (s, length, char = ' ') => s.padEnd(length, char),
-    reverse: (s) => s.split('').reverse().join(''),
-    /**
-     * 数组函数
-     */
-    size: (arr) => {
-        if (Array.isArray(arr) || typeof arr === 'string')
-            return arr.length;
-        if (arr instanceof Map || arr instanceof Set)
-            return arr.size;
-        if (typeof arr === 'object' && arr !== null)
-            return Object.keys(arr).length;
-        return 0;
-    },
-    length: (arr) => arr.length,
-    push: (arr, ...items) => arr.push(...items),
-    pop: (arr) => arr.pop(),
-    shift: (arr) => arr.shift(),
-    unshift: (arr, ...items) => arr.unshift(...items),
-    slice: (arr, start, end) => arr.slice(start, end),
-    concat: (arr, ...items) => arr.concat(...items),
-    reverseArray: (arr) => [...arr].reverse(),
-    sort: (arr, compareFn) => [...arr].sort(compareFn),
-    flatten: (arr, depth = 1) => arr.flat(depth),
-    unique: (arr) => [...new Set(arr)],
-    first: (arr) => arr[0],
-    last: (arr) => arr[arr.length - 1],
-    range: (start, end, step = 1) => {
-        if (end === undefined) {
-            end = start;
-            start = 0;
-        }
-        const result = [];
-        for (let i = start; step > 0 ? i < end : i > end; i += step) {
-            result.push(i);
-        }
-        return result;
-    },
-    /**
-     * 对象函数
-     */
-    keys: (obj) => Object.keys(obj),
-    values: (obj) => Object.values(obj),
-    entries: (obj) => Object.entries(obj),
-    fromEntries: (entries) => Object.fromEntries(entries),
-    hasKey: (obj, key) => key in obj,
-    getValue: (obj, key, defaultValue) => {
-        const value = obj[key];
-        return value !== undefined ? value : defaultValue;
-    },
-    setValue: (obj, key, value) => {
-        obj[key] = value;
-        return obj;
-    },
-    removeKey: (obj, key) => {
-        delete obj[key];
-        return obj;
-    },
-    merge: (...objs) => Object.assign({}, ...objs),
-    deepClone: (obj) => JSON.parse(JSON.stringify(obj)),
-    /**
-     * 条件函数
-     */
-    iif: (condition, trueValue, falseValue) => condition ? trueValue : falseValue,
-    switchCase: (value, ...cases) => {
-        for (let i = 0; i < cases.length - 1; i += 2) {
-            if (value === cases[i])
-                return cases[i + 1];
-        }
-        return cases.length % 2 === 1 ? cases[cases.length - 1] : undefined;
-    },
-    coalesce: (...values) => values.find(v => v !== null && v !== undefined),
-    defaultIfEmpty: (value, defaultValue) => {
-        if (value === null || value === undefined || value === '')
-            return defaultValue;
-        return value;
-    },
-    /**
-     * 日期函数
-     */
-    now: () => Date.now(),
-    date: (timestamp) => new Date(timestamp),
-    parseDate: (dateString) => new Date(dateString),
-    format: (date, format = 'yyyy-MM-dd HH:mm:ss') => {
-        const d = date instanceof Date ? date : new Date(date);
-        const pad = (n) => n.toString().padStart(2, '0');
-        return format
-            .replace(/yyyy/g, d.getFullYear().toString())
-            .replace(/yy/g, d.getFullYear().toString().slice(-2))
-            .replace(/MM/g, pad(d.getMonth() + 1))
-            .replace(/M/g, (d.getMonth() + 1).toString())
-            .replace(/dd/g, pad(d.getDate()))
-            .replace(/d/g, d.getDate().toString())
-            .replace(/HH/g, pad(d.getHours()))
-            .replace(/H/g, d.getHours().toString())
-            .replace(/hh/g, pad(d.getHours() % 12 || 12))
-            .replace(/h/g, (d.getHours() % 12 || 12).toString())
-            .replace(/mm/g, pad(d.getMinutes()))
-            .replace(/m/g, d.getMinutes().toString())
-            .replace(/ss/g, pad(d.getSeconds()))
-            .replace(/s/g, d.getSeconds().toString())
-            .replace(/SSS/g, d.getMilliseconds().toString().padStart(3, '0'));
-    },
-    year: (date) => new Date(date).getFullYear(),
-    month: (date) => new Date(date).getMonth() + 1,
-    day: (date) => new Date(date).getDate(),
-    hour: (date) => new Date(date).getHours(),
-    minute: (date) => new Date(date).getMinutes(),
-    second: (date) => new Date(date).getSeconds(),
-    dayOfWeek: (date) => new Date(date).getDay(),
-    addDays: (date, days) => {
-        const d = new Date(date);
-        d.setDate(d.getDate() + days);
-        return d;
-    },
-    addMonths: (date, months) => {
-        const d = new Date(date);
-        d.setMonth(d.getMonth() + months);
-        return d;
-    },
-    addYears: (date, years) => {
-        const d = new Date(date);
-        d.setFullYear(d.getFullYear() + years);
-        return d;
-    },
-    daysBetween: (date1, date2) => {
-        const d1 = new Date(date1);
-        const d2 = new Date(date2);
-        const diffTime = Math.abs(d2.getTime() - d1.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    },
-    /**
-     * 正则函数
-     */
-    regex: (pattern, flags) => new RegExp(pattern, flags),
-    test: (pattern, text) => {
-        const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
-        return regex.test(text);
-    },
-    match: (pattern, text) => {
-        const regex = typeof pattern === 'string' ? new RegExp(pattern, 'g') : new RegExp(pattern.source, pattern.flags + 'g');
-        return text.match(regex) || [];
-    },
-    matchAll: (pattern, text) => {
-        const regex = typeof pattern === 'string' ? new RegExp(pattern, 'g') : new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
-        return [...text.matchAll(regex)];
-    },
-    /**
-     * JSON函数
-     */
-    json: (value, replacer, space) => JSON.stringify(value, replacer, space),
-    parseJson: (text) => JSON.parse(text),
-    /**
-     * 随机函数
-     */
-    random: () => Math.random(),
-    randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
-    randomFloat: (min, max) => Math.random() * (max - min) + min,
-    randomPick: (arr) => arr[Math.floor(Math.random() * arr.length)],
-    shuffle: (arr) => {
-        const result = [...arr];
-        for (let i = result.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [result[i], result[j]] = [result[j], result[i]];
-        }
-        return result;
-    },
-    uuid: () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    },
-    /**
-     * 打印函数
-     */
-    print: (...args) => {
-        console.log(...args.map(arg => formatValue(arg)));
-        return args.length === 1 ? args[0] : args;
-    },
-    println: (...args) => {
-        console.log(...args.map(arg => formatValue(arg)));
-        return args.length === 1 ? args[0] : args;
-    },
-    printf: (format, ...args) => {
-        console.log(format.replace(/%[sdifjo]/g, () => formatValue(args.shift())));
-        return undefined;
-    },
-    /**
-     * 集合操作
-     */
-    NewMap: (...entries) => new Map(entries),
-    NewSet: (...values) => new Set(values),
-    NewList: (...items) => [...items],
-    NewArray: (...items) => [...items],
-    /**
-     * 高阶函数
-     */
-    map: (arr, fn) => arr.map(fn),
-    filter: (arr, fn) => arr.filter(fn),
-    reduce: (arr, fn, initialValue) => initialValue !== undefined ? arr.reduce(fn, initialValue) : arr.reduce(fn),
-    find: (arr, fn) => arr.find(fn),
-    findIndex: (arr, fn) => arr.findIndex(fn),
-    every: (arr, fn) => arr.every(fn),
-    some: (arr, fn) => arr.some(fn),
-    forEach: (arr, fn) => {
-        arr.forEach(fn);
-        return arr;
-    },
-    sortArray: (arr, compareFn) => [...arr].sort(compareFn),
-    groupBy: (arr, keyFn) => {
-        return arr.reduce((groups, item) => {
-            const key = keyFn(item);
-            if (!groups[key])
-                groups[key] = [];
-            groups[key].push(item);
-            return groups;
-        }, {});
-    },
-    countBy: (arr, keyFn) => {
-        return arr.reduce((counts, item) => {
-            const key = keyFn(item);
-            counts[key] = (counts[key] || 0) + 1;
-            return counts;
-        }, {});
-    },
-    distinctBy: (arr, keyFn) => {
-        const seen = new Set();
-        return arr.filter(item => {
-            const key = keyFn(item);
-            if (seen.has(key))
-                return false;
-            seen.add(key);
-            return true;
-        });
-    }
-};
-/**
- * 格式化值用于打印
- */
-function formatValue(value) {
-    if (value === null)
-        return 'null';
-    if (value === undefined)
-        return 'undefined';
-    if (typeof value === 'string')
-        return value;
-    if (typeof value === 'number' || typeof value === 'boolean')
-        return String(value);
-    if (Array.isArray(value))
-        return JSON.stringify(value);
-    if (typeof value === 'object')
-        return JSON.stringify(value);
-    return String(value);
 }
 
 /**
@@ -3472,12 +3763,12 @@ class SecurityManager {
             maxArrayLength: config.maxArrayLength ?? 100000,
             forbidRiskMethods: config.forbidRiskMethods ?? true,
             riskMethodBlacklist: config.riskMethodBlacklist ?? [],
-            allowedMethods: config.allowedMethods ?? null
+            allowedMethods: config.allowedMethods ?? null,
         };
         // 合并默认黑名单
         this.config.riskMethodBlacklist = [
             ...SecurityManager.DEFAULT_BLACKLIST,
-            ...this.config.riskMethodBlacklist
+            ...this.config.riskMethodBlacklist,
         ];
     }
     /**
@@ -3631,7 +3922,16 @@ class SecurityManager {
     createSafeEnvironment() {
         const safeEnv = {};
         // 只允许安全的内置对象
-        const allowedObjects = ['Math', 'JSON', 'Date', 'Boolean', 'Number', 'String', 'Array', 'Object'];
+        const allowedObjects = [
+            'Math',
+            'JSON',
+            'Date',
+            'Boolean',
+            'Number',
+            'String',
+            'Array',
+            'Object',
+        ];
         for (const name of allowedObjects) {
             if (typeof globalThis[name] !== 'undefined') {
                 safeEnv[name] = globalThis[name];
@@ -3655,164 +3955,8 @@ SecurityManager.DEFAULT_BLACKLIST = [
     'global',
     'globalThis',
     '__dirname',
-    '__filename'
+    '__filename',
 ];
-
-/**
- * 宏管理器
- * 管理宏定义和展开
- */
-class MacroManager {
-    constructor() {
-        this.macros = new Map();
-    }
-    /**
-     * 添加宏定义
-     */
-    add(name, expression) {
-        this.macros.set(name, { name, expression });
-    }
-    /**
-     * 移除宏定义
-     */
-    remove(name) {
-        return this.macros.delete(name);
-    }
-    /**
-     * 检查宏是否存在
-     */
-    has(name) {
-        return this.macros.has(name);
-    }
-    /**
-     * 获取宏表达式
-     */
-    get(name) {
-        return this.macros.get(name)?.expression;
-    }
-    /**
-     * 获取所有宏
-     */
-    getAll() {
-        return new Map(this.macros);
-    }
-    /**
-     * 清空所有宏
-     */
-    clear() {
-        this.macros.clear();
-    }
-}
-/**
- * 自定义函数管理器
- */
-class CustomFunctionManager {
-    constructor() {
-        this.functions = new Map();
-    }
-    /**
-     * 添加自定义函数
-     */
-    add(name, handler, description) {
-        this.functions.set(name, { name, handler, description });
-    }
-    /**
-     * 移除自定义函数
-     */
-    remove(name) {
-        return this.functions.delete(name);
-    }
-    /**
-     * 检查函数是否存在
-     */
-    has(name) {
-        return this.functions.has(name);
-    }
-    /**
-     * 获取函数
-     */
-    get(name) {
-        return this.functions.get(name);
-    }
-    /**
-     * 获取所有函数
-     */
-    getAll() {
-        return new Map(this.functions);
-    }
-    /**
-     * 清空所有函数
-     */
-    clear() {
-        this.functions.clear();
-    }
-}
-/**
- * 自定义操作符管理器
- */
-class CustomOperatorManager {
-    constructor() {
-        this.operators = new Map();
-        this.aliases = new Map();
-    }
-    /**
-     * 添加自定义操作符
-     */
-    add(name, handler, precedence) {
-        this.operators.set(name, { name, handler, precedence });
-    }
-    /**
-     * 添加操作符别名
-     */
-    addAlias(alias, originalName) {
-        this.aliases.set(alias, originalName);
-    }
-    /**
-     * 移除自定义操作符
-     */
-    remove(name) {
-        return this.operators.delete(name);
-    }
-    /**
-     * 检查操作符是否存在
-     */
-    has(name) {
-        const resolvedName = this.resolveAlias(name);
-        return this.operators.has(resolvedName);
-    }
-    /**
-     * 获取操作符
-     */
-    get(name) {
-        const resolvedName = this.resolveAlias(name);
-        return this.operators.get(resolvedName);
-    }
-    /**
-     * 解析别名
-     */
-    resolveAlias(name) {
-        return this.aliases.get(name) || name;
-    }
-    /**
-     * 获取所有操作符
-     */
-    getAll() {
-        return new Map(this.operators);
-    }
-    /**
-     * 获取所有别名
-     */
-    getAllAliases() {
-        return new Map(this.aliases);
-    }
-    /**
-     * 清空所有操作符
-     */
-    clear() {
-        this.operators.clear();
-        this.aliases.clear();
-    }
-}
 
 /**
  * QLExpress-JS 表达式引擎
@@ -3837,8 +3981,8 @@ class ExpressRunner {
                 maxArrayLength: options.security?.maxArrayLength ?? 100000,
                 forbidRiskMethods: options.security?.forbidRiskMethods ?? true,
                 riskMethodBlacklist: options.security?.riskMethodBlacklist ?? [],
-                allowedMethods: options.security?.allowedMethods ?? null
-            }
+                allowedMethods: options.security?.allowedMethods ?? null,
+            },
         };
         this.securityManager = new SecurityManager(this.config.security);
         this.macroManager = new MacroManager();
@@ -3876,12 +4020,12 @@ class ExpressRunner {
     execute(expression, context, options = {}) {
         const { isCache = true, isTrace = false, timeout = 0, useGlobalContext = true } = options;
         // 处理宏展开
-        expression = this.expandMacros(expression);
+        const expandedExpression = this.expandMacros(expression);
         // 检查缓存
-        let cached = isCache ? this.instructionCache.get(expression) : null;
+        let cached = isCache ? this.instructionCache.get(expandedExpression) : null;
         if (!cached) {
             // 词法分析
-            const lexer = new Lexer(expression);
+            const lexer = new Lexer(expandedExpression);
             const tokens = lexer.tokenize();
             // 语法分析
             const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
@@ -3889,7 +4033,7 @@ class ExpressRunner {
             cached = ast;
             // 缓存编译结果
             if (isCache) {
-                this.instructionCache.set(expression, cached);
+                this.instructionCache.set(expandedExpression, cached);
             }
         }
         // 创建运行时上下文
@@ -3900,8 +4044,8 @@ class ExpressRunner {
             trace: isTrace || this.config.trace,
             security: {
                 ...this.config.security,
-                timeout: timeout || this.config.security.timeout
-            }
+                timeout: timeout || this.config.security.timeout,
+            },
         });
         // 注册自定义函数和操作符
         this.registerCustomFunctions(interpreter);
@@ -3984,7 +4128,8 @@ class ExpressRunner {
         for (const key of this.globalContext.keys()) {
             const value = this.globalContext.get(key);
             // 如果值是 UserFunction 类型（有 name, params, body, closure 属性），则注册
-            if (value && typeof value === 'object' &&
+            if (value &&
+                typeof value === 'object' &&
                 'name' in value &&
                 'params' in value &&
                 'body' in value &&
@@ -4238,8 +4383,8 @@ class ExpressRunner {
      * 获取表达式需要的外部变量名称列表
      */
     getOutVarNames(expression) {
-        expression = this.expandMacros(expression);
-        const lexer = new Lexer(expression);
+        const expandedExpression = this.expandMacros(expression);
+        const lexer = new Lexer(expandedExpression);
         const tokens = lexer.tokenize();
         const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
         const ast = parser.parse();
@@ -4249,7 +4394,10 @@ class ExpressRunner {
         const builtins = new Set([
             ...Object.keys(builtinFunctions),
             ...Object.keys(BuiltinObjects.getAll()),
-            'true', 'false', 'null', 'undefined'
+            'true',
+            'false',
+            'null',
+            'undefined',
         ]);
         return Array.from(varNames).filter(name => !builtins.has(name));
     }
@@ -4283,8 +4431,8 @@ class ExpressRunner {
      * 获取表达式需要的函数名称列表
      */
     getOutFunctionNames(expression) {
-        expression = this.expandMacros(expression);
-        const lexer = new Lexer(expression);
+        const expandedExpression = this.expandMacros(expression);
+        const lexer = new Lexer(expandedExpression);
         const tokens = lexer.tokenize();
         const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
         const ast = parser.parse();
@@ -4323,8 +4471,8 @@ class ExpressRunner {
      */
     validate(expression) {
         try {
-            expression = this.expandMacros(expression);
-            const lexer = new Lexer(expression);
+            const expandedExpression = this.expandMacros(expression);
+            const lexer = new Lexer(expandedExpression);
             const tokens = lexer.tokenize();
             const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);
             parser.parse();
@@ -4333,7 +4481,7 @@ class ExpressRunner {
         catch (error) {
             return {
                 valid: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: error instanceof Error ? error.message : String(error),
             };
         }
     }
@@ -4457,8 +4605,8 @@ function execute(expression, context, options) {
             maxArrayLength: 100000,
             forbidRiskMethods: true,
             riskMethodBlacklist: [],
-            allowedMethods: null
-        }
+            allowedMethods: null,
+        },
     });
     return runner.execute(expression, context).value;
 }

@@ -1,6 +1,19 @@
 import { IContext } from '../types';
 
 /**
+ * 格式化值用于打印
+ */
+function formatValue(value: any): string {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+/**
  * 内置函数集合
  */
 export const builtinFunctions: Record<string, (...args: any[]) => any> = {
@@ -69,7 +82,7 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
   isNull: (value: any) => value === null,
   isUndefined: (value: any) => value === undefined,
   isEmpty: (value: any) => {
-    if (value == null) return true;
+    if (value === null || value === undefined) return true;
     if (typeof value === 'string') return value.length === 0;
     if (Array.isArray(value)) return value.length === 0;
     if (value instanceof Map || value instanceof Set) return value.size === 0;
@@ -136,12 +149,14 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
   first: (arr: any[]) => arr[0],
   last: (arr: any[]) => arr[arr.length - 1],
   range: (start: number, end?: number, step: number = 1) => {
-    if (end === undefined) {
-      end = start;
-      start = 0;
+    let actualStart = start;
+    let actualEnd = end;
+    if (actualEnd === undefined) {
+      actualEnd = actualStart;
+      actualStart = 0;
     }
     const result = [];
-    for (let i = start; step > 0 ? i < end : i > end; i += step) {
+    for (let i = actualStart; step > 0 ? i < actualEnd : i > actualEnd; i += step) {
       result.push(i);
     }
     return result;
@@ -173,7 +188,7 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
   /**
    * 条件函数
    */
-  iif: <T>(condition: boolean, trueValue: T, falseValue: T) => condition ? trueValue : falseValue,
+  iif: <T>(condition: boolean, trueValue: T, falseValue: T) => (condition ? trueValue : falseValue),
   switchCase: (value: any, ...cases: any[]) => {
     for (let i = 0; i < cases.length - 1; i += 2) {
       if (value === cases[i]) return cases[i + 1];
@@ -190,7 +205,7 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
    * 日期函数
    */
   now: () => Date.now(),
-  date: (timestamp?: number) => new Date(timestamp),
+  date: (timestamp?: number) => (timestamp !== undefined ? new Date(timestamp) : new Date()),
   parseDate: (dateString: string) => new Date(dateString),
   format: (date: Date | number, format: string = 'yyyy-MM-dd HH:mm:ss') => {
     const d = date instanceof Date ? date : new Date(date);
@@ -251,18 +266,28 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
     return regex.test(text);
   },
   match: (pattern: string | RegExp, text: string) => {
-    const regex = typeof pattern === 'string' ? new RegExp(pattern, 'g') : new RegExp(pattern.source, pattern.flags + 'g');
+    const regex =
+      typeof pattern === 'string'
+        ? new RegExp(pattern, 'g')
+        : new RegExp(pattern.source, pattern.flags + 'g');
     return text.match(regex) || [];
   },
   matchAll: (pattern: string | RegExp, text: string) => {
-    const regex = typeof pattern === 'string' ? new RegExp(pattern, 'g') : new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+    const regex =
+      typeof pattern === 'string'
+        ? new RegExp(pattern, 'g')
+        : new RegExp(
+            pattern.source,
+            pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g',
+          );
     return [...text.matchAll(regex)];
   },
 
   /**
    * JSON函数
    */
-  json: (value: any, replacer?: any, space?: string | number) => JSON.stringify(value, replacer, space),
+  json: (value: any, replacer?: any, space?: string | number) =>
+    JSON.stringify(value, replacer, space),
   parseJson: (text: string) => JSON.parse(text),
 
   /**
@@ -281,9 +306,9 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
     return result;
   },
   uuid: () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   },
@@ -351,21 +376,8 @@ export const builtinFunctions: Record<string, (...args: any[]) => any> = {
       seen.add(key);
       return true;
     });
-  }
+  },
 };
-
-/**
- * 格式化值用于打印
- */
-function formatValue(value: any): string {
-  if (value === null) return 'null';
-  if (value === undefined) return 'undefined';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return JSON.stringify(value);
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-}
 
 /**
  * 操作符定义
@@ -381,7 +393,7 @@ export const builtinOperators: Record<string, (args: any[], context: IContext) =
 export function registerOperator(
   operators: Map<string, (args: any[], context: IContext) => any>,
   name: string,
-  handler: (args: any[], context: IContext) => any
+  handler: (args: any[], context: IContext) => any,
 ): void {
   operators.set(name, handler);
 }

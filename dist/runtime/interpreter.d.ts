@@ -1,4 +1,4 @@
-import { ExecutionResult, RuntimeConfig, IContext } from '../types';
+import { ExecutionResult, IContext, RuntimeConfig } from '../types';
 import { RuntimeContext, Scope } from './context';
 /**
  * 用户自定义函数

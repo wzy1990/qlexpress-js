@@ -1,39 +1,40 @@
 import {
-  Token,
-  TokenType,
-  ParseError,
-  NodeType,
-  Program,
-  Statement,
-  Expression,
-  Identifier,
-  NumberLiteral,
-  StringLiteral,
-  BooleanLiteral,
-  NullLiteral,
   ArrayExpression,
-  ObjectExpression,
-  BinaryExpression,
-  UnaryExpression,
-  ConditionalExpression,
-  AssignmentExpression,
-  UpdateExpression,
-  MemberExpression,
-  CallExpression,
-  NewExpression,
   ArrowFunctionExpression,
+  AssignmentExpression,
+  BetweenExpression,
+  BinaryExpression,
+  BlockStatement,
+  BooleanLiteral,
+  CallExpression,
+  ConditionalExpression,
+  Expression,
+  ExpressionStatement,
+  ForStatement,
+  FunctionDeclaration,
+  Identifier,
+  IfStatement,
+  ImportStatement,
   InExpression,
   LikeExpression,
-  BetweenExpression,
-  BlockStatement,
-  IfStatement,
-  WhileStatement,
-  ForStatement,
+  MemberExpression,
+  NewExpression,
+  NodeType,
+  NullLiteral,
+  NumberLiteral,
+  ObjectExpression,
+  ParseError,
+  Placeholder,
+  Program,
   ReturnStatement,
+  Statement,
+  StringLiteral,
+  Token,
+  TokenType,
+  UnaryExpression,
+  UpdateExpression,
   VariableDeclaration,
-  FunctionDeclaration,
-  ImportStatement,
-  ExpressionStatement
+  WhileStatement,
 } from '../types';
 
 /**
@@ -43,23 +44,47 @@ const PRECEDENCE: Record<string, number> = {
   // 最低优先级
   ';': 0,
   ',': 1,
-  '=': 2, '+=': 2, '-=': 2, '*=': 2, '/=': 2, '%=': 2,
-  '?': 3, ':': 3,
+  '=': 2,
+  '+=': 2,
+  '-=': 2,
+  '*=': 2,
+  '/=': 2,
+  '%=': 2,
+  '?': 3,
+  ':': 3,
   '||': 4,
   '&&': 5,
   '|': 6,
   '^': 7,
   '&': 8,
-  '==': 9, '!=': 9, '===': 9, '!==': 9, '<>': 9,
-  '<': 10, '>': 10, '<=': 10, '>=': 10,
-  '<<': 11, '>>': 11, '>>>': 11,
-  '+': 12, '-': 12,
-  '*': 13, '/': 13, '%': 13, 'mod': 13,
+  '==': 9,
+  '!=': 9,
+  '===': 9,
+  '!==': 9,
+  '<>': 9,
+  '<': 10,
+  '>': 10,
+  '<=': 10,
+  '>=': 10,
+  '<<': 11,
+  '>>': 11,
+  '>>>': 11,
+  '+': 12,
+  '-': 12,
+  '*': 13,
+  '/': 13,
+  '%': 13,
+  mod: 13,
   // 一元运算符
-  '!': 14, '~': 14, '++': 14, '--': 14,
+  '!': 14,
+  '~': 14,
+  '++': 14,
+  '--': 14,
   // 成员访问和函数调用
-  '.': 15, '[': 15, '(': 15,
-  'new': 16
+  '.': 15,
+  '[': 15,
+  '(': 15,
+  new: 16,
 };
 
 /**
@@ -77,7 +102,11 @@ export class Parser {
   private macros: Map<string, string> = new Map();
   private operatorAliases: Map<string, string> = new Map();
 
-  constructor(tokens: Token[], macros?: Map<string, string>, operatorAliases?: Map<string, string>) {
+  constructor(
+    tokens: Token[],
+    macros?: Map<string, string>,
+    operatorAliases?: Map<string, string>,
+  ) {
     this.tokens = tokens;
     if (macros) this.macros = macros;
     if (operatorAliases) this.operatorAliases = operatorAliases;
@@ -98,7 +127,7 @@ export class Parser {
 
     return {
       type: NodeType.Program,
-      body
+      body,
     };
   }
 
@@ -146,14 +175,15 @@ export class Parser {
         // 检查变量声明（标识符后跟赋值操作）
         if (this.check(TokenType.IDENTIFIER)) {
           const nextToken = this.peekNext();
-          if (nextToken && (
-            nextToken.type === TokenType.ASSIGN ||
-            nextToken.type === TokenType.PLUS_ASSIGN ||
-            nextToken.type === TokenType.MINUS_ASSIGN ||
-            nextToken.type === TokenType.STAR_ASSIGN ||
-            nextToken.type === TokenType.SLASH_ASSIGN ||
-            nextToken.type === TokenType.PERCENT_ASSIGN
-          )) {
+          if (
+            nextToken &&
+            (nextToken.type === TokenType.ASSIGN ||
+              nextToken.type === TokenType.PLUS_ASSIGN ||
+              nextToken.type === TokenType.MINUS_ASSIGN ||
+              nextToken.type === TokenType.STAR_ASSIGN ||
+              nextToken.type === TokenType.SLASH_ASSIGN ||
+              nextToken.type === TokenType.PERCENT_ASSIGN)
+          ) {
             return this.parseExpressionStatement();
           }
         }
@@ -203,7 +233,7 @@ export class Parser {
       test,
       consequent,
       alternate,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -249,7 +279,7 @@ export class Parser {
       test,
       update,
       body,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -274,7 +304,7 @@ export class Parser {
       type: NodeType.WhileStatement,
       test,
       body,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -285,7 +315,12 @@ export class Parser {
     const token = this.advance(); // 消费 'return'
 
     let argument: Expression | null = null;
-    if (!this.check(TokenType.SEMICOLON) && !this.check(TokenType.NEWLINE) && !this.check(TokenType.RBRACE) && !this.isAtEnd()) {
+    if (
+      !this.check(TokenType.SEMICOLON) &&
+      !this.check(TokenType.NEWLINE) &&
+      !this.check(TokenType.RBRACE) &&
+      !this.isAtEnd()
+    ) {
       argument = this.parseExpression();
     }
 
@@ -297,7 +332,7 @@ export class Parser {
     return {
       type: NodeType.ReturnStatement,
       argument,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -314,7 +349,7 @@ export class Parser {
 
     return {
       type: NodeType.BreakStatement,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -331,7 +366,7 @@ export class Parser {
 
     return {
       type: NodeType.ContinueStatement,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -341,16 +376,24 @@ export class Parser {
   private parseFunctionDeclaration(): FunctionDeclaration {
     const token = this.advance(); // 消费 'function'
 
-    const nameToken = this.consume(TokenType.IDENTIFIER, "Expect function name");
-    const name = { type: NodeType.Identifier, name: nameToken.value, loc: this.createLocation(nameToken) };
+    const nameToken = this.consume(TokenType.IDENTIFIER, 'Expect function name');
+    const name = {
+      type: NodeType.Identifier,
+      name: nameToken.value,
+      loc: this.createLocation(nameToken),
+    };
 
     this.consume(TokenType.LPAREN, "Expect '(' after function name");
 
     const params: Identifier[] = [];
     if (!this.check(TokenType.RPAREN)) {
       do {
-        const paramToken = this.consume(TokenType.IDENTIFIER, "Expect parameter name");
-        params.push({ type: NodeType.Identifier, name: paramToken.value, loc: this.createLocation(paramToken) } as Identifier);
+        const paramToken = this.consume(TokenType.IDENTIFIER, 'Expect parameter name');
+        params.push({
+          type: NodeType.Identifier,
+          name: paramToken.value,
+          loc: this.createLocation(paramToken),
+        } as Identifier);
       } while (this.match(TokenType.COMMA));
     }
 
@@ -368,7 +411,7 @@ export class Parser {
       id: name as any,
       params,
       body,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -383,7 +426,7 @@ export class Parser {
     return {
       type: NodeType.ImportStatement,
       source,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -412,7 +455,7 @@ export class Parser {
     return {
       type: NodeType.BlockStatement,
       body,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     };
   }
 
@@ -429,7 +472,7 @@ export class Parser {
 
     return {
       type: NodeType.ExpressionStatement,
-      expression: expr
+      expression: expr,
     };
   }
 
@@ -446,12 +489,14 @@ export class Parser {
   private parseAssignment(): Expression {
     const expr = this.parseConditional();
 
-    if (this.check(TokenType.ASSIGN) ||
-        this.check(TokenType.PLUS_ASSIGN) ||
-        this.check(TokenType.MINUS_ASSIGN) ||
-        this.check(TokenType.STAR_ASSIGN) ||
-        this.check(TokenType.SLASH_ASSIGN) ||
-        this.check(TokenType.PERCENT_ASSIGN)) {
+    if (
+      this.check(TokenType.ASSIGN) ||
+      this.check(TokenType.PLUS_ASSIGN) ||
+      this.check(TokenType.MINUS_ASSIGN) ||
+      this.check(TokenType.STAR_ASSIGN) ||
+      this.check(TokenType.SLASH_ASSIGN) ||
+      this.check(TokenType.PERCENT_ASSIGN)
+    ) {
       const operator = this.advance().value as string;
       const value = this.parseAssignment();
 
@@ -460,7 +505,7 @@ export class Parser {
         operator,
         left: expr,
         right: value,
-        loc: this.createLocation(expr)
+        loc: this.createLocation(expr),
       } as AssignmentExpression;
     }
 
@@ -484,7 +529,7 @@ export class Parser {
         test: expr,
         consequent,
         alternate,
-        loc: this.createLocation(expr)
+        loc: this.createLocation(expr),
       } as ConditionalExpression;
     }
 
@@ -511,7 +556,7 @@ export class Parser {
         operator: operator === 'or' ? '||' : operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -533,7 +578,7 @@ export class Parser {
         operator: operator === 'and' ? '&&' : operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -555,7 +600,7 @@ export class Parser {
         operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -577,7 +622,7 @@ export class Parser {
         operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -599,7 +644,7 @@ export class Parser {
         operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -621,7 +666,7 @@ export class Parser {
         operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -634,9 +679,15 @@ export class Parser {
   private parseComparison(): Expression {
     let left = this.parseShift();
 
-    while (this.match(TokenType.LT) || this.match(TokenType.GT) ||
-           this.match(TokenType.LTE) || this.match(TokenType.GTE) ||
-           this.match(TokenType.IN) || this.match(TokenType.LIKE) || this.match(TokenType.BETWEEN)) {
+    while (
+      this.match(TokenType.LT) ||
+      this.match(TokenType.GT) ||
+      this.match(TokenType.LTE) ||
+      this.match(TokenType.GTE) ||
+      this.match(TokenType.IN) ||
+      this.match(TokenType.LIKE) ||
+      this.match(TokenType.BETWEEN)
+    ) {
       const operator = this.previous().type;
 
       if (operator === TokenType.IN) {
@@ -645,7 +696,7 @@ export class Parser {
           type: NodeType.InExpression,
           element: left,
           container: right,
-          loc: this.createLocation(left)
+          loc: this.createLocation(left),
         } as InExpression;
       } else if (operator === TokenType.LIKE) {
         const right = this.parseShift();
@@ -653,7 +704,7 @@ export class Parser {
           type: NodeType.LikeExpression,
           value: left,
           pattern: right,
-          loc: this.createLocation(left)
+          loc: this.createLocation(left),
         } as LikeExpression;
       } else if (operator === TokenType.BETWEEN) {
         const low = this.parseShift();
@@ -664,7 +715,7 @@ export class Parser {
           value: left,
           low,
           high,
-          loc: this.createLocation(left)
+          loc: this.createLocation(left),
         } as BetweenExpression;
       } else {
         const op = this.previous().value as string;
@@ -675,7 +726,7 @@ export class Parser {
           operator: op,
           left,
           right,
-          loc: this.createLocation(left)
+          loc: this.createLocation(left),
         } as BinaryExpression;
       }
     }
@@ -689,7 +740,11 @@ export class Parser {
   private parseShift(): Expression {
     let left = this.parseAdditive();
 
-    while (this.match(TokenType.LSHIFT) || this.match(TokenType.RSHIFT) || this.match(TokenType.URSHIFT)) {
+    while (
+      this.match(TokenType.LSHIFT) ||
+      this.match(TokenType.RSHIFT) ||
+      this.match(TokenType.URSHIFT)
+    ) {
       const operator = this.previous().value as string;
       const right = this.parseAdditive();
 
@@ -698,7 +753,7 @@ export class Parser {
         operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -720,7 +775,7 @@ export class Parser {
         operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -733,8 +788,12 @@ export class Parser {
   private parseMultiplicative(): Expression {
     let left = this.parseUnary();
 
-    while (this.match(TokenType.STAR) || this.match(TokenType.SLASH) ||
-           this.match(TokenType.PERCENT) || this.match(TokenType.MOD)) {
+    while (
+      this.match(TokenType.STAR) ||
+      this.match(TokenType.SLASH) ||
+      this.match(TokenType.PERCENT) ||
+      this.match(TokenType.MOD)
+    ) {
       const operator = this.previous().value;
       const right = this.parseUnary();
 
@@ -743,7 +802,7 @@ export class Parser {
         operator: operator === 'mod' ? '%' : operator,
         left,
         right,
-        loc: this.createLocation(left)
+        loc: this.createLocation(left),
       } as BinaryExpression;
     }
 
@@ -754,8 +813,12 @@ export class Parser {
    * 解析一元表达式
    */
   private parseUnary(): Expression {
-    if (this.match(TokenType.NOT_OP) || this.match(TokenType.NOT) ||
-        this.match(TokenType.MINUS) || this.match(TokenType.BIT_NOT)) {
+    if (
+      this.match(TokenType.NOT_OP) ||
+      this.match(TokenType.NOT) ||
+      this.match(TokenType.MINUS) ||
+      this.match(TokenType.BIT_NOT)
+    ) {
       const operator = this.previous().value;
       const argument = this.parseUnary();
 
@@ -764,7 +827,7 @@ export class Parser {
         operator: operator === 'not' ? '!' : operator,
         argument,
         prefix: true,
-        loc: this.createLocation(this.previous())
+        loc: this.createLocation(this.previous()),
       } as UnaryExpression;
     }
 
@@ -777,7 +840,7 @@ export class Parser {
         operator,
         argument,
         prefix: true,
-        loc: this.createLocation(this.previous())
+        loc: this.createLocation(this.previous()),
       } as UpdateExpression;
     }
 
@@ -798,7 +861,7 @@ export class Parser {
         operator,
         argument: expr,
         prefix: false,
-        loc: this.createLocation(expr)
+        loc: this.createLocation(expr),
       } as UpdateExpression;
     }
 
@@ -816,13 +879,17 @@ export class Parser {
         expr = this.finishCall(expr);
       } else if (this.match(TokenType.DOT)) {
         const nameToken = this.consume(TokenType.IDENTIFIER, "Expect property name after '.'");
-        const name = { type: NodeType.Identifier, name: nameToken.value, loc: this.createLocation(nameToken) } as Identifier;
+        const name = {
+          type: NodeType.Identifier,
+          name: nameToken.value,
+          loc: this.createLocation(nameToken),
+        } as Identifier;
         expr = {
           type: NodeType.MemberExpression,
           object: expr,
           property: name,
           computed: false,
-          loc: this.createLocation(expr)
+          loc: this.createLocation(expr),
         } as MemberExpression;
       } else if (this.match(TokenType.LBRACKET)) {
         const property = this.parseExpression();
@@ -832,7 +899,7 @@ export class Parser {
           object: expr,
           property,
           computed: true,
-          loc: this.createLocation(expr)
+          loc: this.createLocation(expr),
         } as MemberExpression;
       } else {
         break;
@@ -860,7 +927,7 @@ export class Parser {
       type: NodeType.CallExpression,
       callee,
       arguments: args,
-      loc: this.createLocation(callee)
+      loc: this.createLocation(callee),
     } as CallExpression;
   }
 
@@ -876,7 +943,7 @@ export class Parser {
         return {
           type: NodeType.NumberLiteral,
           value: token.value,
-          loc: this.createLocation(token)
+          loc: this.createLocation(token),
         } as NumberLiteral;
 
       case TokenType.STRING:
@@ -884,7 +951,7 @@ export class Parser {
         return {
           type: NodeType.StringLiteral,
           value: token.value,
-          loc: this.createLocation(token)
+          loc: this.createLocation(token),
         } as StringLiteral;
 
       case TokenType.BOOLEAN:
@@ -892,15 +959,15 @@ export class Parser {
         return {
           type: NodeType.BooleanLiteral,
           value: token.value,
-          loc: this.createLocation(token)
+          loc: this.createLocation(token),
         } as BooleanLiteral;
 
       case TokenType.NULL:
         this.advance();
         return {
           type: NodeType.NullLiteral,
-          value: token.value,  // 使用token的value（可能是null或undefined）
-          loc: this.createLocation(token)
+          value: token.value, // 使用token的value（可能是null或undefined）
+          loc: this.createLocation(token),
         } as NullLiteral;
 
       case TokenType.IDENTIFIER:
@@ -908,24 +975,32 @@ export class Parser {
         return {
           type: NodeType.Identifier,
           name: token.value,
-          loc: this.createLocation(token)
+          loc: this.createLocation(token),
         } as Identifier;
+
+      case TokenType.PLACEHOLDER:
+        this.advance();
+        return {
+          type: NodeType.Placeholder,
+          name: token.value,
+          loc: this.createLocation(token),
+        } as Placeholder;
 
       case TokenType.NEW:
         return this.parseNewExpression();
 
       case TokenType.LPAREN: {
         this.advance();
-        
+
         // 检查是否是箭头函数的参数列表 (a, b) => ...
         if (this.isArrowParameterList()) {
           const params = this.parseArrowParameters();
           this.consume(TokenType.RPAREN, "Expect ')' after parameters");
-          
+
           if (this.check(TokenType.ARROW)) {
             return this.parseArrowFunctionWithParams(params);
           }
-          
+
           // 如果不是箭头函数，则将参数列表转换为逗号表达式
           if (params.length === 1) {
             return params[0];
@@ -938,21 +1013,21 @@ export class Parser {
                 operator: ',',
                 left: result,
                 right: params[i],
-                loc: result.loc
+                loc: result.loc,
               } as BinaryExpression;
             }
             return result;
           }
         }
-        
+
         const expr = this.parseExpression();
         this.consume(TokenType.RPAREN, "Expect ')' after expression");
-        
+
         // 检查是否是箭头函数 x => ...
         if (this.check(TokenType.ARROW)) {
           return this.parseArrowFunction(expr);
         }
-        
+
         return expr;
       }
 
@@ -989,7 +1064,7 @@ export class Parser {
       type: NodeType.NewExpression,
       callee,
       arguments: args,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     } as NewExpression;
   }
 
@@ -998,32 +1073,32 @@ export class Parser {
    */
   private isArrowParameterList(): boolean {
     let index = this.current;
-    
+
     // 跳过换行
     while (index < this.tokens.length && this.tokens[index].type === TokenType.NEWLINE) {
       index++;
     }
-    
+
     if (index >= this.tokens.length) return false;
-    
+
     // 第一个必须是标识符
     if (this.tokens[index].type !== TokenType.IDENTIFIER) return false;
     index++;
-    
+
     // 跳过换行
     while (index < this.tokens.length && this.tokens[index].type === TokenType.NEWLINE) {
       index++;
     }
-    
+
     // 检查后续是否是逗号分隔的标识符
     while (index < this.tokens.length) {
       const token = this.tokens[index];
-      
+
       if (token.type === TokenType.RPAREN) {
         // 到达右括号，是参数列表
         return true;
       }
-      
+
       if (token.type === TokenType.COMMA) {
         index++;
         // 跳过换行
@@ -1041,7 +1116,7 @@ export class Parser {
         return false;
       }
     }
-    
+
     return false;
   }
 
@@ -1050,26 +1125,26 @@ export class Parser {
    */
   private parseArrowParameters(): Identifier[] {
     const params: Identifier[] = [];
-    
+
     do {
       // 跳过换行
       while (this.check(TokenType.NEWLINE)) {
         this.advance();
       }
-      
-      const paramToken = this.consume(TokenType.IDENTIFIER, "Expect parameter name");
+
+      const paramToken = this.consume(TokenType.IDENTIFIER, 'Expect parameter name');
       params.push({
         type: NodeType.Identifier,
         name: paramToken.value,
-        loc: this.createLocation(paramToken)
+        loc: this.createLocation(paramToken),
       } as Identifier);
-      
+
       // 跳过换行
       while (this.check(TokenType.NEWLINE)) {
         this.advance();
       }
     } while (this.match(TokenType.COMMA));
-    
+
     return params;
   }
 
@@ -1093,7 +1168,7 @@ export class Parser {
       type: NodeType.ArrowFunctionExpression,
       params,
       body,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     } as ArrowFunctionExpression;
   }
 
@@ -1143,7 +1218,7 @@ export class Parser {
       type: NodeType.ArrowFunctionExpression,
       params,
       body,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     } as ArrowFunctionExpression;
   }
 
@@ -1165,7 +1240,7 @@ export class Parser {
     return {
       type: NodeType.ArrayExpression,
       elements,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     } as ArrayExpression;
   }
 
@@ -1196,19 +1271,19 @@ export class Parser {
           key = {
             type: NodeType.Identifier,
             name: this.advance().value,
-            loc: this.createLocation(this.previous())
+            loc: this.createLocation(this.previous()),
           } as Identifier;
         } else if (this.check(TokenType.STRING)) {
           key = {
             type: NodeType.StringLiteral,
             value: this.advance().value,
-            loc: this.createLocation(this.previous())
+            loc: this.createLocation(this.previous()),
           } as StringLiteral;
         } else if (this.check(TokenType.NUMBER)) {
           key = {
             type: NodeType.NumberLiteral,
             value: this.advance().value,
-            loc: this.createLocation(this.previous())
+            loc: this.createLocation(this.previous()),
           } as NumberLiteral;
         } else {
           throw new ParseError('Expect property name', this.peek());
@@ -1226,7 +1301,7 @@ export class Parser {
     return {
       type: NodeType.ObjectExpression,
       properties,
-      loc: this.createLocation(token)
+      loc: this.createLocation(token),
     } as ObjectExpression;
   }
 
@@ -1252,9 +1327,11 @@ export class Parser {
     const firstToken = this.peek();
     let isObject = false;
 
-    if (firstToken.type === TokenType.IDENTIFIER ||
-        firstToken.type === TokenType.STRING ||
-        firstToken.type === TokenType.NUMBER) {
+    if (
+      firstToken.type === TokenType.IDENTIFIER ||
+      firstToken.type === TokenType.STRING ||
+      firstToken.type === TokenType.NUMBER
+    ) {
       this.advance();
       // 检查是否是冒号
       if (this.check(TokenType.COLON)) {
@@ -1274,7 +1351,10 @@ export class Parser {
    * 检查并跳过换行符
    */
   private skipNewlines(): void {
-    while (this.current < this.tokens.length && this.tokens[this.current].type === TokenType.NEWLINE) {
+    while (
+      this.current < this.tokens.length &&
+      this.tokens[this.current].type === TokenType.NEWLINE
+    ) {
       this.current++;
     }
   }
@@ -1314,7 +1394,7 @@ export class Parser {
   private match(type: TokenType): boolean {
     // 先跳过换行符
     this.skipNewlines();
-    
+
     if (this.check(type)) {
       this.advance();
       return true;
@@ -1325,7 +1405,7 @@ export class Parser {
   private consume(type: TokenType, message: string): Token {
     // consume 前也要跳过换行符
     this.skipNewlines();
-    
+
     if (this.check(type)) return this.advance();
     throw new ParseError(message, this.peek());
   }
@@ -1334,7 +1414,7 @@ export class Parser {
     if ('line' in start) {
       return {
         start: { line: start.line, column: start.column },
-        end: { line: this.previous().line, column: this.previous().column }
+        end: { line: this.previous().line, column: this.previous().column },
       };
     }
     return start.loc;

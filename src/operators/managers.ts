@@ -1,4 +1,4 @@
-import { IContext } from '../types';
+import { FunctionInfo, IContext } from '../types';
 
 /**
  * 宏管理器
@@ -203,8 +203,8 @@ interface OperatorDefinition {
  * 外部方法绑定管理器
  */
 export class ExternalMethodManager {
-  private classMethods: Map<string, Map<string, Function>> = new Map();
-  private instanceMethods: Map<string, Map<string, Function>> = new Map();
+  private classMethods: Map<string, Map<string, FunctionInfo>> = new Map();
+  private instanceMethods: Map<string, Map<string, FunctionInfo>> = new Map();
 
   /**
    * 绑定类静态方法
@@ -213,7 +213,7 @@ export class ExternalMethodManager {
     functionName: string,
     className: string,
     methodName: string,
-    paramTypes?: string[]
+    paramTypes?: string[],
   ): void {
     if (!this.classMethods.has(className)) {
       this.classMethods.set(className, new Map());
@@ -226,8 +226,8 @@ export class ExternalMethodManager {
       className,
       methodName,
       paramTypes,
-      type: 'static'
-    } as any);
+      type: 'static',
+    });
   }
 
   /**
@@ -237,7 +237,7 @@ export class ExternalMethodManager {
     functionName: string,
     instance: any,
     methodName: string,
-    paramTypes?: string[]
+    paramTypes?: string[],
   ): void {
     const instanceId = instance.constructor.name;
     if (!this.instanceMethods.has(instanceId)) {
@@ -250,8 +250,8 @@ export class ExternalMethodManager {
       instance,
       methodName,
       paramTypes,
-      type: 'instance'
-    } as any);
+      type: 'instance',
+    });
   }
 
   /**
@@ -263,8 +263,8 @@ export class ExternalMethodManager {
       throw new Error(`Class ${className} not found`);
     }
 
-    const methodInfo = classMethodMap.get(functionName);
-    if (!methodInfo) {
+    const functionInfo = classMethodMap.get(functionName);
+    if (!functionInfo) {
       throw new Error(`Method ${functionName} not found in class ${className}`);
     }
 
@@ -282,8 +282,8 @@ export class ExternalMethodManager {
       throw new Error(`Instance ${instanceId} not found`);
     }
 
-    const methodInfo = instanceMethodMap.get(functionName);
-    if (!methodInfo) {
+    const functionInfo = instanceMethodMap.get(functionName);
+    if (!functionInfo) {
       throw new Error(`Method ${functionName} not found in instance ${instanceId}`);
     }
 
@@ -294,14 +294,14 @@ export class ExternalMethodManager {
   /**
    * 获取所有绑定的类方法
    */
-  getAllClassMethods(): Map<string, Map<string, Function>> {
+  getAllClassMethods(): Map<string, Map<string, FunctionInfo>> {
     return new Map(this.classMethods);
   }
 
   /**
    * 获取所有绑定的实例方法
    */
-  getAllInstanceMethods(): Map<string, Map<string, Function>> {
+  getAllInstanceMethods(): Map<string, Map<string, FunctionInfo>> {
     return new Map(this.instanceMethods);
   }
 

@@ -1,4 +1,4 @@
-import { IContext } from '../types';
+import { FunctionInfo, IContext } from '../types';
 /**
  * 宏管理器
  * 管理宏定义和展开
@@ -151,11 +151,11 @@ export declare class ExternalMethodManager {
     /**
      * 获取所有绑定的类方法
      */
-    getAllClassMethods(): Map<string, Map<string, Function>>;
+    getAllClassMethods(): Map<string, Map<string, FunctionInfo>>;
     /**
      * 获取所有绑定的实例方法
      */
-    getAllInstanceMethods(): Map<string, Map<string, Function>>;
+    getAllInstanceMethods(): Map<string, Map<string, FunctionInfo>>;
     /**
      * 清空所有绑定
      */

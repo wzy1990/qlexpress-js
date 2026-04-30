@@ -1,4 +1,4 @@
-import { Token, Program } from '../types';
+import { Program, Token } from '../types';
 /**
  * 语法分析器
  * 将Token流转换为抽象语法树(AST)

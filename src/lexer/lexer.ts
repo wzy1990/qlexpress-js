@@ -1,35 +1,31 @@
-import {
-  Token,
-  TokenType,
-  LexerError
-} from '../types';
+import { LexerError, Token, TokenType } from '../types';
 
 /**
  * 关键字映射
  */
 const KEYWORDS: Record<string, TokenType> = {
-  'if': TokenType.IF,
-  'then': TokenType.THEN,
-  'else': TokenType.ELSE,
-  'for': TokenType.FOR,
-  'while': TokenType.WHILE,
-  'break': TokenType.BREAK,
-  'continue': TokenType.CONTINUE,
-  'return': TokenType.RETURN,
-  'function': TokenType.FUNCTION,
-  'import': TokenType.IMPORT,
-  'new': TokenType.NEW,
-  'in': TokenType.IN,
-  'like': TokenType.LIKE,
-  'between': TokenType.BETWEEN,
-  'and': TokenType.AND,
-  'or': TokenType.OR,
-  'not': TokenType.NOT,
-  'mod': TokenType.MOD,
-  'true': TokenType.BOOLEAN,
-  'false': TokenType.BOOLEAN,
-  'null': TokenType.NULL,
-  'undefined': TokenType.NULL  // undefined 也作为 null 类型处理
+  if: TokenType.IF,
+  then: TokenType.THEN,
+  else: TokenType.ELSE,
+  for: TokenType.FOR,
+  while: TokenType.WHILE,
+  break: TokenType.BREAK,
+  continue: TokenType.CONTINUE,
+  return: TokenType.RETURN,
+  function: TokenType.FUNCTION,
+  import: TokenType.IMPORT,
+  new: TokenType.NEW,
+  in: TokenType.IN,
+  like: TokenType.LIKE,
+  between: TokenType.BETWEEN,
+  and: TokenType.AND,
+  or: TokenType.OR,
+  not: TokenType.NOT,
+  mod: TokenType.MOD,
+  true: TokenType.BOOLEAN,
+  false: TokenType.BOOLEAN,
+  null: TokenType.NULL,
+  undefined: TokenType.NULL, // undefined 也作为 null 类型处理
 };
 
 /**
@@ -59,7 +55,7 @@ const OPERATORS: Record<string, TokenType> = {
   ']': TokenType.RBRACKET,
   ',': TokenType.COMMA,
   ';': TokenType.SEMICOLON,
-  '.': TokenType.DOT
+  '.': TokenType.DOT,
 };
 
 /**
@@ -124,6 +120,12 @@ export class Lexer {
     // 字符串处理
     if (char === '"' || char === "'" || char === '`') {
       this.scanString(char);
+      return;
+    }
+
+    // 占位符处理：${...}
+    if (char === '$' && this.peek() === '{') {
+      this.scanPlaceholder();
       return;
     }
 
@@ -391,13 +393,27 @@ export class Lexer {
         const escaped = this.advance();
         raw += escaped;
         switch (escaped) {
-          case 'n': value += '\n'; break;
-          case 'r': value += '\r'; break;
-          case 't': value += '\t'; break;
-          case 'b': value += '\b'; break;
-          case 'f': value += '\f'; break;
-          case 'v': value += '\v'; break;
-          case '0': value += '\0'; break;
+          case 'n':
+            value += '\n';
+            break;
+          case 'r':
+            value += '\r';
+            break;
+          case 't':
+            value += '\t';
+            break;
+          case 'b':
+            value += '\b';
+            break;
+          case 'f':
+            value += '\f';
+            break;
+          case 'v':
+            value += '\v';
+            break;
+          case '0':
+            value += '\0';
+            break;
           case 'x': {
             // 十六进制转义
             let hex = '';
@@ -452,6 +468,61 @@ export class Lexer {
   }
 
   /**
+   * 扫描占位符：${placeholder}
+   */
+  private scanPlaceholder(): void {
+    // 此时 '$' 已经被 scanToken 消费，当前字符应该是 '{'
+    if (this.peek() !== '{') {
+      // 如果不是 '{'，则 '$' 是普通标识符的一部分
+      // 回退到 scanIdentifier 逻辑
+      this.current = this.start; // 回退到 '$' 的位置
+      this.scanIdentifier();
+      return;
+    }
+
+    // 消费 '{'
+    this.advance();
+
+    const start = this.current;
+    let braceCount = 1;
+
+    // 处理嵌套的大括号
+    while (!this.isAtEnd() && braceCount > 0) {
+      const char = this.peek();
+      if (char === '{') {
+        braceCount++;
+        this.advance();
+      } else if (char === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          break;
+        }
+        this.advance();
+      } else if (char === '\n') {
+        this.line++;
+        this.column = 0;
+        this.advance();
+      } else {
+        this.advance();
+      }
+    }
+
+    if (braceCount > 0) {
+      throw new LexerError('Unterminated placeholder', this.line, this.column);
+    }
+
+    // 获取占位符内容（不包括最后的 '}'）
+    const content = this.source.slice(start, this.current).trim();
+    this.advance(); // 消费最后的 '}'
+
+    // 占位符内容应该是标识符（变量名）
+    if (!this.isValidIdentifier(content)) {
+      throw new LexerError(`Invalid placeholder name: ${content}`, this.line, this.column);
+    }
+
+    this.addToken(TokenType.PLACEHOLDER, content);
+  }
+  /**
    * 扫描标识符
    */
   private scanIdentifier(): void {
@@ -503,6 +574,24 @@ export class Lexer {
     while (!this.isAtEnd() && this.peek() !== '\n') {
       this.advance();
     }
+  }
+
+  /**
+   * 辅助方法：检查是否为有效标识符
+   */
+  private isValidIdentifier(text: string): boolean {
+    if (text.length === 0) return false;
+    const firstChar = text[0];
+    if (!this.isAlpha(firstChar) && firstChar !== '_' && firstChar !== '$') {
+      return false;
+    }
+    for (let i = 1; i < text.length; i++) {
+      const char = text[i];
+      if (!this.isAlpha(char) && !this.isDigit(char) && char !== '_' && char !== '$') {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -567,9 +656,7 @@ export class Lexer {
    */
   private isHexDigit(char: string): boolean {
     return (
-      (char >= '0' && char <= '9') ||
-      (char >= 'a' && char <= 'f') ||
-      (char >= 'A' && char <= 'F')
+      (char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F')
     );
   }
 
@@ -608,7 +695,7 @@ export class Lexer {
       value,
       line: this.line,
       column: this.startColumn,
-      raw: raw !== undefined ? raw : String(value)
+      raw: raw !== undefined ? raw : String(value),
     });
   }
 }

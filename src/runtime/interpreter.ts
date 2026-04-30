@@ -1,41 +1,38 @@
 import {
-  NodeType,
-  Program,
-  Expression,
-  Statement,
-  BinaryExpression,
-  UnaryExpression,
-  ConditionalExpression,
-  AssignmentExpression,
-  UpdateExpression,
-  MemberExpression,
-  CallExpression,
-  NewExpression,
-  ArrowFunctionExpression,
-  InExpression,
-  LikeExpression,
-  BetweenExpression,
   ArrayExpression,
-  ObjectExpression,
-  Identifier,
+  ArrowFunctionExpression,
+  AssignmentExpression,
+  BetweenExpression,
+  BinaryExpression,
   BlockStatement,
-  IfStatement,
-  WhileStatement,
-  ForStatement,
-  ReturnStatement,
-  FunctionDeclaration,
-  VariableDeclaration,
-  ExpressionStatement,
-  RuntimeError,
   BreakException,
+  CallExpression,
+  ConditionalExpression,
   ContinueException,
-  ReturnException,
-  ReturnValue,
   ExecutionResult,
   ExecutionTrace,
-  SecurityConfig,
+  ExpressionStatement,
+  ForStatement,
+  FunctionDeclaration,
+  IContext,
+  Identifier,
+  IfStatement,
+  InExpression,
+  LikeExpression,
+  MemberExpression,
+  NewExpression,
+  NodeType,
+  ObjectExpression,
+  Program,
+  ReturnException,
+  ReturnStatement,
+  ReturnValue,
   RuntimeConfig,
-  IContext
+  RuntimeError,
+  UnaryExpression,
+  UpdateExpression,
+  VariableDeclaration,
+  WhileStatement,
 } from '../types';
 import { RuntimeContext, Scope } from './context';
 
@@ -64,10 +61,7 @@ export class Interpreter {
   private macros: Map<string, string> = new Map();
   private userFunctions: Map<string, UserFunction> = new Map();
 
-  constructor(
-    context: RuntimeContext,
-    config: Partial<RuntimeConfig> = {}
-  ) {
+  constructor(context: RuntimeContext, config: Partial<RuntimeConfig> = {}) {
     this.context = context;
     this.config = {
       precise: config.precise ?? false,
@@ -80,8 +74,8 @@ export class Interpreter {
         maxArrayLength: config.security?.maxArrayLength ?? 100000,
         forbidRiskMethods: config.security?.forbidRiskMethods ?? true,
         riskMethodBlacklist: config.security?.riskMethodBlacklist ?? [],
-        allowedMethods: config.security?.allowedMethods ?? null
-      }
+        allowedMethods: config.security?.allowedMethods ?? null,
+      },
     };
   }
 
@@ -98,7 +92,7 @@ export class Interpreter {
       return {
         value: value instanceof ReturnValue ? value.value : value,
         variables: this.context.toObject(),
-        trace: this.config.trace ? this.traces : undefined
+        trace: this.config.trace ? this.traces : undefined,
       };
     } catch (error) {
       if (error instanceof BreakException) {
@@ -111,7 +105,7 @@ export class Interpreter {
         return {
           value: error.value,
           variables: this.context.toObject(),
-          trace: this.config.trace ? this.traces : undefined
+          trace: this.config.trace ? this.traces : undefined,
         };
       }
       throw error;
@@ -171,7 +165,7 @@ export class Interpreter {
       this.traces.push({
         node,
         action,
-        result
+        result,
       });
     }
   }
@@ -197,6 +191,14 @@ export class Interpreter {
 
       case NodeType.Identifier:
         return this.evaluateIdentifier(node as Identifier);
+
+      case NodeType.Placeholder:
+        // 占位符的行为与标识符相同，直接复用 evaluateIdentifier 逻辑
+        return this.evaluateIdentifier({
+          type: NodeType.Identifier,
+          name: (node as any).name,
+          loc: node.loc,
+        } as Identifier);
 
       case NodeType.ArrayExpression:
         return this.evaluateArrayExpression(node as ArrayExpression);
@@ -393,12 +395,13 @@ export class Interpreter {
       case '*':
         return this.toNumber(left) * this.toNumber(right);
 
-      case '/':
+      case '/': {
         const divisor = this.toNumber(right);
         if (divisor === 0) {
           throw new RuntimeError('Division by zero');
         }
         return this.toNumber(left) / divisor;
+      }
 
       case '%':
         return this.toNumber(left) % this.toNumber(right);
@@ -497,37 +500,43 @@ export class Interpreter {
           this.context.set(name, value);
           return value;
 
-        case '+=':
+        case '+=': {
           const currentAdd = this.context.get(name) ?? 0;
-          const resultAdd = typeof currentAdd === 'string' || typeof value === 'string'
-            ? String(currentAdd) + String(value)
-            : this.toNumber(currentAdd) + this.toNumber(value);
+          const resultAdd =
+            typeof currentAdd === 'string' || typeof value === 'string'
+              ? String(currentAdd) + String(value)
+              : this.toNumber(currentAdd) + this.toNumber(value);
           this.context.set(name, resultAdd);
           return resultAdd;
+        }
 
-        case '-=':
+        case '-=': {
           const currentSub = this.toNumber(this.context.get(name) ?? 0);
           const resultSub = currentSub - this.toNumber(value);
           this.context.set(name, resultSub);
           return resultSub;
+        }
 
-        case '*=':
+        case '*=': {
           const currentMul = this.toNumber(this.context.get(name) ?? 0);
           const resultMul = currentMul * this.toNumber(value);
           this.context.set(name, resultMul);
           return resultMul;
+        }
 
-        case '/=':
+        case '/=': {
           const currentDiv = this.toNumber(this.context.get(name) ?? 0);
           const resultDiv = currentDiv / this.toNumber(value);
           this.context.set(name, resultDiv);
           return resultDiv;
+        }
 
-        case '%=':
+        case '%=': {
           const currentMod = this.toNumber(this.context.get(name) ?? 0);
           const resultMod = currentMod % this.toNumber(value);
           this.context.set(name, resultMod);
           return resultMod;
+        }
 
         default:
           throw new RuntimeError(`Unknown assignment operator: ${node.operator}`);
@@ -546,25 +555,30 @@ export class Interpreter {
           object[property] = value;
           return value;
 
-        case '+=':
+        case '+=': {
           object[property] = (object[property] ?? 0) + value;
           return object[property];
+        }
 
-        case '-=':
+        case '-=': {
           object[property] = (object[property] ?? 0) - value;
           return object[property];
+        }
 
-        case '*=':
+        case '*=': {
           object[property] = (object[property] ?? 0) * value;
           return object[property];
+        }
 
-        case '/=':
+        case '/=': {
           object[property] = (object[property] ?? 0) / value;
           return object[property];
+        }
 
-        case '%=':
+        case '%=': {
           object[property] = (object[property] ?? 0) % value;
           return object[property];
+        }
 
         default:
           throw new RuntimeError(`Unknown assignment operator: ${node.operator}`);
@@ -630,7 +644,9 @@ export class Interpreter {
         return (key: any) => object.get(key);
       }
       if (property === 'set') {
-        return (key: any, value: any) => { object.set(key, value); };
+        return (key: any, value: any) => {
+          object.set(key, value);
+        };
       }
       if (property === 'has') {
         return (key: any) => object.has(key);
@@ -649,7 +665,9 @@ export class Interpreter {
         return (value: any) => object.has(value);
       }
       if (property === 'add') {
-        return (value: any) => { object.add(value); };
+        return (value: any) => {
+          object.add(value);
+        };
       }
       if (property === 'delete') {
         return (value: any) => object.delete(value);
@@ -694,7 +712,11 @@ export class Interpreter {
     const callee = this.evaluate(node.callee);
 
     // 自定义函数
-    if (this.customFunctions.has(node.callee.type === NodeType.Identifier ? (node.callee as Identifier).name : '')) {
+    if (
+      this.customFunctions.has(
+        node.callee.type === NodeType.Identifier ? (node.callee as Identifier).name : '',
+      )
+    ) {
       const funcName = (node.callee as Identifier).name;
       const func = this.customFunctions.get(funcName)!;
       return func(...args);
@@ -775,7 +797,7 @@ export class Interpreter {
   private evaluateArrowFunctionExpression(node: ArrowFunctionExpression): any {
     // 保存当前作用域作为闭包
     const closure = this.context.getCurrentScope().clone();
-    
+
     // 提取参数名
     const params = node.params.map(param => {
       if (param.type === NodeType.Identifier) {
@@ -788,16 +810,16 @@ export class Interpreter {
     const arrowFunc = (...args: any[]) => {
       // 保存当前作用域
       const previousScope = this.context.getCurrentScope();
-      
+
       // 创建新的作用域，继承闭包
       this.context.enterScope();
       this.context.getCurrentScope().merge(closure);
-      
+
       // 绑定参数
       for (let i = 0; i < params.length; i++) {
         this.context.define(params[i], args[i]);
       }
-      
+
       // 执行函数体
       let result: any = undefined;
       try {
@@ -812,7 +834,7 @@ export class Interpreter {
         // 恢复之前的作用域
         this.context.exitScope();
       }
-      
+
       return result;
     };
 
@@ -861,8 +883,8 @@ export class Interpreter {
     // 将SQL风格的LIKE模式转换为正则表达式
     const regexPattern = pattern
       .replace(/[.+^${}()|[\]\\]/g, '\\$&') // 转义特殊字符
-      .replace(/%/g, '.*')  // % 匹配任意字符序列
-      .replace(/_/g, '.');  // _ 匹配单个字符
+      .replace(/%/g, '.*') // % 匹配任意字符序列
+      .replace(/_/g, '.'); // _ 匹配单个字符
 
     const regex = new RegExp(`^${regexPattern}$`, 'i');
     return regex.test(value);
@@ -989,7 +1011,7 @@ export class Interpreter {
       name: node.id.name,
       params: node.params.map(p => p.name),
       body: node.body,
-      closure: this.context.getCurrentScope()
+      closure: this.context.getCurrentScope(),
     };
 
     this.userFunctions.set(func.name, func);
@@ -1031,20 +1053,20 @@ export class Interpreter {
   private isEqual(left: any, right: any): boolean {
     // 同类型直接比较
     if (typeof left === typeof right) {
-      return left === right;
+      return Object.is(left, right);
     }
 
     // null 和 undefined 相等
-    if (left == null && right == null) {
+    if ((left === null || left === undefined) && (right === null || right === undefined)) {
       return true;
     }
 
     // 数字和字符串比较
     if (typeof left === 'number' && typeof right === 'string') {
-      return left === parseFloat(right);
+      return Object.is(left, parseFloat(right));
     }
     if (typeof left === 'string' && typeof right === 'number') {
-      return parseFloat(left) === right;
+      return Object.is(parseFloat(left), right);
     }
 
     // 布尔值转换
@@ -1055,6 +1077,7 @@ export class Interpreter {
       return this.isEqual(left, right ? 1 : 0);
     }
 
-    return left == right;
+    // 其他情况使用Object.is
+    return Object.is(left, right);
   }
 }

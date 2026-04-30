@@ -1,4 +1,4 @@
-import { IContext, ExecutionResult, RuntimeConfig, SecurityConfig } from './types';
+import { ExecutionResult, IContext, RuntimeConfig, SecurityConfig } from './types';
 /**
  * QLExpress-JS 表达式引擎
  * 类似阿里巴巴 QLExpress 的 JavaScript 实现

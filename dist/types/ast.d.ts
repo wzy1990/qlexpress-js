@@ -7,6 +7,7 @@ export declare enum NodeType {
     BooleanLiteral = "BooleanLiteral",
     NullLiteral = "NullLiteral",
     Identifier = "Identifier",
+    Placeholder = "Placeholder",// 新增：占位符节点
     ArrayExpression = "ArrayExpression",
     ObjectExpression = "ObjectExpression",
     BinaryExpression = "BinaryExpression",
@@ -73,6 +74,13 @@ export interface NullLiteral extends BaseNode {
  */
 export interface Identifier extends BaseNode {
     type: NodeType.Identifier;
+    name: string;
+}
+/**
+ * 占位符节点
+ */
+export interface Placeholder extends BaseNode {
+    type: NodeType.Placeholder;
     name: string;
 }
 /**
@@ -192,7 +200,7 @@ export interface BetweenExpression extends BaseNode {
 /**
  * 表达式联合类型
  */
-export type Expression = NumberLiteral | StringLiteral | BooleanLiteral | NullLiteral | Identifier | ArrayExpression | ObjectExpression | BinaryExpression | UnaryExpression | ConditionalExpression | AssignmentExpression | UpdateExpression | MemberExpression | CallExpression | NewExpression | ArrowFunctionExpression | InExpression | LikeExpression | BetweenExpression;
+export type Expression = NumberLiteral | StringLiteral | BooleanLiteral | NullLiteral | Identifier | Placeholder | ArrayExpression | ObjectExpression | BinaryExpression | UnaryExpression | ConditionalExpression | AssignmentExpression | UpdateExpression | MemberExpression | CallExpression | NewExpression | ArrowFunctionExpression | InExpression | LikeExpression | BetweenExpression;
 /**
  * 程序节点
  */
