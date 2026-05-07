@@ -662,14 +662,19 @@ const OPERATORS = {
  * 将源代码字符串转换为Token流
  */
 class Lexer {
-    constructor(source) {
+    // 修改构造函数，支持传入保留名称集合
+    constructor(source, reservedNames) {
         this.tokens = [];
         this.start = 0;
         this.current = 0;
         this.line = 1;
         this.column = 1;
         this.startColumn = 1;
+        this.reservedNames = new Set();
         this.source = source;
+        if (reservedNames) {
+            this.reservedNames = reservedNames;
+        }
     }
     /**
      * 执行词法分析，返回Token数组
@@ -1115,17 +1120,24 @@ class Lexer {
             this.advance();
         }
         const text = this.source.substring(this.start, this.current);
-        let type = KEYWORDS[text.toLowerCase()];
+        const lowerText = text.toLowerCase();
+        // 检查是否在保留名称列表中（自定义函数名覆盖关键字）
+        if (this.reservedNames.has(text)) {
+            // 如果是已注册的自定义函数名，优先作为标识符处理
+            this.addToken(TokenType.IDENTIFIER, text);
+            return;
+        }
+        let type = KEYWORDS[lowerText];
         if (type === undefined) {
             type = TokenType.IDENTIFIER;
         }
         // 处理布尔值和null
         if (type === TokenType.BOOLEAN) {
-            this.addToken(type, text.toLowerCase() === 'true', text);
+            this.addToken(type, lowerText === 'true', text);
         }
         else if (type === TokenType.NULL) {
             // 区分 null 和 undefined
-            this.addToken(type, text.toLowerCase() === 'undefined' ? undefined : null, text);
+            this.addToken(type, lowerText === 'undefined' ? undefined : null, text);
         }
         else {
             this.addToken(type, text);
@@ -4024,8 +4036,10 @@ class ExpressRunner {
         // 检查缓存
         let cached = isCache ? this.instructionCache.get(expandedExpression) : null;
         if (!cached) {
+            // 获取所有已注册的自定义函数名（用于覆盖关键字）
+            const registeredFunctionNames = new Set(this.functionManager.getAll().keys());
             // 词法分析
-            const lexer = new Lexer(expandedExpression);
+            const lexer = new Lexer(expandedExpression, registeredFunctionNames);
             const tokens = lexer.tokenize();
             // 语法分析
             const parser = new Parser(tokens, this.getMacroExpressions(), this.operatorAliases);

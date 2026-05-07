@@ -11,7 +11,8 @@ export declare class Lexer {
     private line;
     private column;
     private startColumn;
-    constructor(source: string);
+    private reservedNames;
+    constructor(source: string, reservedNames?: Set<string>);
     /**
      * 执行词法分析，返回Token数组
      */

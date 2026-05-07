@@ -102,8 +102,11 @@ export class ExpressRunner {
     let cached = isCache ? this.instructionCache.get(expandedExpression) : null;
 
     if (!cached) {
+      // 获取所有已注册的自定义函数名（用于覆盖关键字）
+      const registeredFunctionNames = new Set(this.functionManager.getAll().keys());
+      
       // 词法分析
-      const lexer = new Lexer(expandedExpression);
+      const lexer = new Lexer(expandedExpression, registeredFunctionNames);
       const tokens = lexer.tokenize();
 
       // 语法分析

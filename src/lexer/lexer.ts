@@ -70,9 +70,14 @@ export class Lexer {
   private line: number = 1;
   private column: number = 1;
   private startColumn: number = 1;
+  private reservedNames: Set<string> = new Set();
 
-  constructor(source: string) {
+  // 修改构造函数，支持传入保留名称集合
+  constructor(source: string, reservedNames?: Set<string>) {
     this.source = source;
+    if (reservedNames) {
+      this.reservedNames = reservedNames;
+    }
   }
 
   /**
@@ -531,7 +536,16 @@ export class Lexer {
     }
 
     const text = this.source.substring(this.start, this.current);
-    let type = KEYWORDS[text.toLowerCase()];
+    const lowerText = text.toLowerCase();
+    
+    // 检查是否在保留名称列表中（自定义函数名覆盖关键字）
+    if (this.reservedNames.has(text)) {
+      // 如果是已注册的自定义函数名，优先作为标识符处理
+      this.addToken(TokenType.IDENTIFIER, text);
+      return;
+    }
+    
+    let type = KEYWORDS[lowerText];
 
     if (type === undefined) {
       type = TokenType.IDENTIFIER;
@@ -539,10 +553,10 @@ export class Lexer {
 
     // 处理布尔值和null
     if (type === TokenType.BOOLEAN) {
-      this.addToken(type, text.toLowerCase() === 'true', text);
+      this.addToken(type, lowerText === 'true', text);
     } else if (type === TokenType.NULL) {
       // 区分 null 和 undefined
-      this.addToken(type, text.toLowerCase() === 'undefined' ? undefined : null, text);
+      this.addToken(type, lowerText === 'undefined' ? undefined : null, text);
     } else {
       this.addToken(type, text);
     }
